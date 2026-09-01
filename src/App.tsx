@@ -13,6 +13,7 @@ import { AuthModal } from './components/AuthModal';
 import { GitHubModal } from './components/GitHubModal';
 import { AdminLockScreen } from './components/AdminLockScreen';
 import { AdminPanelScreen } from './components/AdminPanelScreen';
+import { DeviceGateScreen } from './components/DeviceGateScreen';
 import { drumSynth } from './audio/drumSynth';
 
 const DEV_APP_URL = 'https://ais-dev-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
@@ -69,6 +70,39 @@ export default function App() {
       return 'admin1234';
     }
   });
+
+  // Mobile / Tablet device restriction detection
+  const [isBypassDeviceGate, setIsBypassDeviceGate] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('pokopoko_bypass_device_gate') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const ua = navigator.userAgent || '';
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
+    const isIPadOS = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobileScreen = window.innerWidth <= 1024;
+    return isMobileUA || isIPadOS || (hasTouch && isMobileScreen);
+  });
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const ua = navigator.userAgent || '';
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
+      const isIPadOS = /Macintosh/i.test(ua) && navigator.maxTouchPoints > 1;
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isMobileScreen = window.innerWidth <= 1024;
+      setIsMobileOrTablet(isMobileUA || isIPadOS || (hasTouch && isMobileScreen));
+    };
+
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
 
   // Load user settings from localStorage if available
   const [settings, setSettings] = useState<PlayerSettings>(() => {
@@ -179,8 +213,16 @@ export default function App() {
 
       {/* Mobile container framing */}
       <main className="w-full max-w-md h-screen sm:h-[94vh] sm:max-h-[860px] bg-slate-950/95 sm:rounded-[36px] sm:border-2 sm:border-pink-500/30 shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-xl">
-        {/* Dynamic Screen View */}
-        {isDevEnvironment && !isAdminAuthenticated ? (
+        {/* Device Restriction Check for Smartphone & Tablet Only */}
+        {!isMobileOrTablet && !isBypassDeviceGate ? (
+          <DeviceGateScreen
+            sharedUrl={SHARED_APP_URL}
+            onBypass={() => {
+              setIsBypassDeviceGate(true);
+              sessionStorage.setItem('pokopoko_bypass_device_gate', 'true');
+            }}
+          />
+        ) : isDevEnvironment && !isAdminAuthenticated ? (
           <AdminLockScreen
             onSuccessAuth={(pin) => {
               setIsAdminAuthenticated(true);

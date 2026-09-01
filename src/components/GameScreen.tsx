@@ -217,10 +217,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       const comboMultiplier = 1 + Math.min(2, Math.floor(newCombo / 15) * 0.25);
       const feverMultiplier = prev.isFever ? 1.5 : 1.0;
 
+      // Base scores scaled to 1/10 (PERFECT: 100, GREAT: 70, GOOD: 40)
       let pts = 0;
-      if (judgment === 'PERFECT') pts = 1000 * comboMultiplier * feverMultiplier;
-      else if (judgment === 'GREAT') pts = 700 * comboMultiplier * feverMultiplier;
-      else if (judgment === 'GOOD') pts = 400 * feverMultiplier;
+      if (judgment === 'PERFECT') pts = 100 * comboMultiplier * feverMultiplier;
+      else if (judgment === 'GREAT') pts = 70 * comboMultiplier * feverMultiplier;
+      else if (judgment === 'GOOD') pts = 40 * feverMultiplier;
 
       const newPerfect = prev.perfect + (judgment === 'PERFECT' ? 1 : 0);
       const newGreat = prev.great + (judgment === 'GREAT' ? 1 : 0);
