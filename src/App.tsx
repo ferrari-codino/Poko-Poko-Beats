@@ -15,6 +15,7 @@ import { AdminLockScreen } from './components/AdminLockScreen';
 import { AdminPanelScreen } from './components/AdminPanelScreen';
 import { DeviceGateScreen } from './components/DeviceGateScreen';
 import { drumSynth } from './audio/drumSynth';
+import { getLocalUsers } from './utils/storageFallback';
 
 const DEV_APP_URL = 'https://ais-dev-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
 const SHARED_APP_URL = 'https://ais-pre-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
@@ -119,29 +120,57 @@ export default function App() {
       try {
         const savedUserId = localStorage.getItem('pokopoko_user_id');
         if (savedUserId) {
-          const res = await fetch(`/api/user/${savedUserId}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.user) {
-              setCurrentUser(data.user);
-              setSettings((s) => ({
-                ...s,
-                playerName: data.user.nickname,
-                avatarId: data.user.avatarId || s.avatarId,
-                currentUserId: data.user.id,
-              }));
-              return;
+          try {
+            const res = await fetch(`/api/user/${savedUserId}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.user) {
+                setCurrentUser(data.user);
+                setSettings((s) => ({
+                  ...s,
+                  playerName: data.user.nickname,
+                  avatarId: data.user.avatarId || s.avatarId,
+                  currentUserId: data.user.id,
+                }));
+                return;
+              }
             }
+          } catch {
+            // ignore network error
+          }
+
+          // Fallback to local storage for user profile
+          const localUsers = getLocalUsers();
+          const localUser = localUsers.find(u => u.id === savedUserId);
+          if (localUser) {
+            setCurrentUser(localUser);
+            setSettings((s) => ({
+              ...s,
+              playerName: localUser.nickname,
+              avatarId: localUser.avatarId || s.avatarId,
+              currentUserId: localUser.id,
+            }));
+            return;
           }
         }
 
         // Check if any users exist
-        const usersRes = await fetch('/api/users');
-        if (usersRes.ok) {
-          const usersData = await usersRes.json();
-          if (usersData.users && usersData.users.length > 0) {
-            setExistingUsers(usersData.users);
+        try {
+          const usersRes = await fetch('/api/users');
+          if (usersRes.ok) {
+            const usersData = await usersRes.json();
+            if (usersData.users && usersData.users.length > 0) {
+              setExistingUsers(usersData.users);
+              return;
+            }
           }
+        } catch {
+          // ignore network error
+        }
+
+        const localUsers = getLocalUsers();
+        if (localUsers.length > 0) {
+          setExistingUsers(localUsers);
         }
       } catch (err) {
         console.error('Failed to restore user:', err);

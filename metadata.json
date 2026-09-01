@@ -2,5 +2,7 @@
   "name": "Poko-Poko Beats",
   "description": "スマホで遊ぶドラム系リズムゲーム。上から見下ろすドラムセットを叩いてハイスコアを目指そう！ランキング機能・難易度選択・リアルタイム音源合成完備。",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

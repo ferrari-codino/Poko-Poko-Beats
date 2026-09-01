@@ -3,6 +3,7 @@ import { SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, MascotId,
 import { MascotCharacter } from './MascotCharacter';
 import confetti from 'canvas-confetti';
 import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft } from 'lucide-react';
+import { saveLocalScore, saveLocalUser } from '../utils/storageFallback';
 
 interface ResultScreenProps {
   song: SongData;
@@ -73,11 +74,47 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     const autoSave = async () => {
       setIsSubmitting(true);
       try {
-        // 1. Submit to Leaderboard
-        const res = await fetch('/api/scores', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        let isSavedOnServer = false;
+        let rankPos = 1;
+        let isTop30 = true;
+
+        // 1. Submit to Leaderboard (Server or local fallback)
+        try {
+          const res = await fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser?.id,
+              playerName: currentUser?.nickname || settings.playerName || '名無しドラマー',
+              avatarId: currentUser?.avatarId || settings.avatarId || 'pokota',
+              songId: song.id,
+              songTitle: song.title,
+              difficulty,
+              score: scoreState.score,
+              maxCombo: scoreState.maxCombo,
+              accuracy: scoreState.accuracy,
+              perfectCount: scoreState.perfect,
+              greatCount: scoreState.great,
+              goodCount: scoreState.good,
+              missCount: scoreState.miss,
+              rank: rankInfo.rank,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              isSavedOnServer = true;
+              rankPos = data.rankPosition;
+              isTop30 = data.isTop30;
+            }
+          }
+        } catch {
+          // ignore network error
+        }
+
+        if (!isSavedOnServer) {
+          const localRes = saveLocalScore({
             userId: currentUser?.id,
             playerName: currentUser?.nickname || settings.playerName || '名無しドラマー',
             avatarId: currentUser?.avatarId || settings.avatarId || 'pokota',
@@ -92,38 +129,76 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             goodCount: scoreState.good,
             missCount: scoreState.miss,
             rank: rankInfo.rank,
-          }),
-        });
-
-        const data = await res.json();
+          });
+          rankPos = localRes.rankPosition;
+          isTop30 = localRes.isTop30;
+        }
 
         // 2. Update User Personal Best if logged in
         let isNewBest = false;
         if (currentUser?.id) {
-          const userRes = await fetch(`/api/user/${currentUser.id}/bests`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              songId: song.id,
-              difficulty,
-              score: scoreState.score,
-              rank: rankInfo.rank,
-              maxCombo: scoreState.maxCombo,
-              accuracy: scoreState.accuracy,
-              earnedStars: rankInfo.rank === 'S+' ? 3 : rankInfo.rank === 'S' ? 2 : 1,
-            }),
-          });
-          const userData = await userRes.json();
-          if (userData.user && onUpdateUserBests) {
-            onUpdateUserBests(userData.user);
+          let updatedUser: UserProfile | null = null;
+          try {
+            const userRes = await fetch(`/api/user/${currentUser.id}/bests`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                songId: song.id,
+                difficulty,
+                score: scoreState.score,
+                rank: rankInfo.rank,
+                maxCombo: scoreState.maxCombo,
+                accuracy: scoreState.accuracy,
+                earnedStars: rankInfo.rank === 'S+' ? 3 : rankInfo.rank === 'S' ? 2 : 1,
+              }),
+            });
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              updatedUser = userData.user;
+              isNewBest = userData.isNewBest;
+            }
+          } catch {
+            // ignore network error
           }
-          isNewBest = userData.isNewBest;
+
+          if (!updatedUser) {
+            // Local personal best calculation
+            const prevPb = currentUser.personalBests?.[song.id]?.[difficulty];
+            if (!prevPb || scoreState.score > prevPb.score) {
+              isNewBest = true;
+              const newPb = {
+                score: scoreState.score,
+                rank: rankInfo.rank,
+                maxCombo: scoreState.maxCombo,
+                accuracy: scoreState.accuracy,
+                timestamp: Date.now(),
+              };
+              updatedUser = {
+                ...currentUser,
+                totalPlays: (currentUser.totalPlays || 0) + 1,
+                totalScore: (currentUser.totalScore || 0) + scoreState.score,
+                starsCount: (currentUser.starsCount || 0) + (rankInfo.rank === 'S+' ? 3 : rankInfo.rank === 'S' ? 2 : 1),
+                personalBests: {
+                  ...currentUser.personalBests,
+                  [song.id]: {
+                    ...(currentUser.personalBests?.[song.id] || {}),
+                    [difficulty]: newPb,
+                  },
+                },
+              };
+              saveLocalUser(updatedUser);
+            }
+          }
+
+          if (updatedUser && onUpdateUserBests) {
+            onUpdateUserBests(updatedUser);
+          }
         }
 
-        if (!isCancelled && data.success) {
+        if (!isCancelled) {
           setSubmitResult({
-            rankPosition: data.rankPosition,
-            isTop30: data.isTop30,
+            rankPosition: rankPos,
+            isTop30,
             isNewBest,
           });
         }

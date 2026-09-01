@@ -3,6 +3,7 @@ import { LeaderboardEntry, SongData, Difficulty, MascotId } from '../types';
 import { SONGS } from '../data/songs';
 import { MASCOTS } from '../data/mascots';
 import { Trophy, Medal, Crown, ArrowLeft, RefreshCw, Music, Sparkles } from 'lucide-react';
+import { getLocalScores } from '../utils/storageFallback';
 
 interface LeaderboardScreenProps {
   initialSongId?: string;
@@ -30,12 +31,18 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
       if (selectedDifficulty !== 'all') params.append('difficulty', selectedDifficulty);
 
       const res = await fetch(`/api/leaderboard?${params.toString()}`);
-      const data = await res.json();
-      if (data.leaderboard) {
-        setEntries(data.leaderboard);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.leaderboard) {
+          setEntries(data.leaderboard);
+          return;
+        }
       }
-    } catch (err) {
-      console.error('Failed to fetch leaderboard:', err);
+      // Fallback for static hosting (Vercel / GitHub Pages)
+      setEntries(getLocalScores(selectedSongId, selectedDifficulty));
+    } catch {
+      // Fallback on network failure or static environment
+      setEntries(getLocalScores(selectedSongId, selectedDifficulty));
     } finally {
       setIsLoading(false);
     }

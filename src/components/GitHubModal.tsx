@@ -126,12 +126,12 @@ export const GitHubModal: React.FC<GitHubModalProps> = ({ isOpen, onClose }) => 
             <div className="bg-slate-950/90 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
               <div className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
                 <Terminal className="w-3 h-3" />
-                ワンクリック連携ステップ：
+                GitHub ➔ Vercel 公開ステップ（完全無料・Cookie不要）：
               </div>
               <ol className="text-[10px] text-slate-300 space-y-1 list-decimal list-inside">
-                <li>画面右上の <span className="font-bold text-white">⚙️ Settings (設定)</span> を開く</li>
-                <li><span className="font-bold text-white">「Export to GitHub」</span> または <span className="font-bold text-white">「Download ZIP」</span> を選択</li>
-                <li>GitHubアカウントを認証して、リポジトリを作成または既存リポジトリへコミット</li>
+                <li>画面右上の <span className="font-bold text-white">⚙️ Settings</span> ➔ <span className="font-bold text-pink-300">「Export to GitHub」</span> でリポジトリを作成</li>
+                <li><a href="https://vercel.com/new" target="_blank" rel="noopener noreferrer" className="text-cyan-300 underline font-bold">vercel.com/new</a> にアクセス（GitHubで無料ログイン）</li>
+                <li>作成したリポジトリを選択して「Deploy」ボタンを押すだけ（設定不要で即座にURL発行）</li>
               </ol>
             </div>
           </div>

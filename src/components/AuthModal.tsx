@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MascotId, UserProfile } from '../types';
 import { MASCOTS } from '../data/mascots';
+import { saveLocalUser, getLocalUsers } from '../utils/storageFallback';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -37,22 +38,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage('');
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nickname: nickname.trim(),
-          avatarId: selectedAvatar,
-          pin: pin.trim() || undefined,
-        }),
-      });
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nickname: nickname.trim(),
+            avatarId: selectedAvatar,
+            pin: pin.trim() || undefined,
+          }),
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || '登録に失敗しました');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            saveLocalUser(data.user);
+            onLoginSuccess(data.user);
+            return;
+          }
+        }
+      } catch {
+        // Fallback for static hosting
       }
 
-      onLoginSuccess(data.user);
+      // Local user registration fallback
+      const localUser: UserProfile = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        nickname: nickname.trim(),
+        avatarId: selectedAvatar,
+        pin: pin.trim() || undefined,
+        totalPlays: 0,
+        totalScore: 0,
+        starsCount: 0,
+        personalBests: {},
+        registeredAt: Date.now(),
+        lastLoginAt: Date.now(),
+      };
+      saveLocalUser(localUser);
+      onLoginSuccess(localUser);
     } catch (err: any) {
       setErrorMessage(err.message || '登録エラーが発生しました');
     } finally {
@@ -65,18 +88,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMessage('');
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, nickname: userNickname }),
-      });
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, nickname: userNickname }),
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'ログインに失敗しました');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            onLoginSuccess(data.user);
+            return;
+          }
+        }
+      } catch {
+        // Fallback for static hosting
       }
 
-      onLoginSuccess(data.user);
+      // Local search
+      const localUsers = getLocalUsers();
+      const found = localUsers.find(u => u.id === userId || u.nickname === userNickname);
+      if (found) {
+        onLoginSuccess(found);
+      } else {
+        const fallbackUser: UserProfile = {
+          id: userId,
+          nickname: userNickname,
+          avatarId: 'pokota',
+          totalPlays: 0,
+          totalScore: 0,
+          starsCount: 0,
+          personalBests: {},
+          registeredAt: Date.now(),
+          lastLoginAt: Date.now(),
+        };
+        onLoginSuccess(fallbackUser);
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'ログインエラーが発生しました');
     } finally {
