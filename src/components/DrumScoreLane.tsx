@@ -108,43 +108,56 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
           <div className="w-full h-[1px] bg-slate-600" />
         </div>
 
-        {/* Percussion Clef Symbol 𝄢 / Drum clef bars on the left */}
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none z-10 opacity-70">
-          <div className="w-1.5 h-14 bg-slate-400 rounded-sm" />
+        {/* Percussion Clef Symbol 𝄢 & Time Signature on the left (楽譜の始まり) */}
+        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none z-10 opacity-80">
+          <div className="w-1.5 h-14 bg-slate-400 rounded-sm shadow" />
           <div className="w-1 h-14 bg-slate-500 rounded-sm" />
-          <span className="text-xs font-black font-mono text-slate-400 ml-0.5">🥁</span>
+          <div className="flex flex-col items-center justify-center font-serif text-[11px] font-black text-slate-400 leading-none tracking-tighter">
+            <span>4</span>
+            <span>4</span>
+          </div>
+          <span className="text-xs font-black font-mono text-slate-400">🥁</span>
         </div>
 
-        {/* TARGET / STRIKE LINE (判定ライン) on left (~65px from left edge) */}
+        {/* FLOW DIRECTION ARROW GUIDE (左から右への進行方向案内) */}
+        <div className="absolute left-20 bottom-1 pointer-events-none text-[8px] font-mono text-slate-500 flex items-center gap-1 opacity-70">
+          <span>譜面進行</span>
+          <span className="text-amber-400">▶ ▶ ▶</span>
+        </div>
+
+        {/* TARGET / STRIKE LINE (判定ライン) on the right side (~85%) */}
         <div
           className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center justify-between"
-          style={{ left: '72px' }}
+          style={{ left: '85%' }}
         >
           {/* Top Target Marker */}
-          <div className="w-3 h-2 bg-amber-400 rounded-b shadow-[0_0_10px_#f59e0b] -translate-x-1/2" />
+          <div className="w-3.5 h-2.5 bg-amber-400 rounded-b shadow-[0_0_12px_#f59e0b] -translate-x-1/2" />
 
           {/* Glowing Vertical Hit Line */}
-          <div className="w-[3px] h-full bg-gradient-to-b from-amber-400 via-pink-400 to-cyan-400 shadow-[0_0_12px_rgba(245,158,11,0.8)] opacity-90" />
+          <div className="w-[3px] h-full bg-gradient-to-b from-amber-400 via-pink-400 to-cyan-400 shadow-[0_0_14px_rgba(245,158,11,0.9)] opacity-95" />
 
           {/* Bottom Target Marker */}
-          <div className="w-3 h-2 bg-amber-400 rounded-t shadow-[0_0_10px_#f59e0b] -translate-x-1/2" />
+          <div className="w-3.5 h-2.5 bg-amber-400 rounded-t shadow-[0_0_12px_#f59e0b] -translate-x-1/2" />
         </div>
 
-        {/* Strike Zone Glow Aura */}
+        {/* Strike Zone Glow Aura around the right hit line */}
         <div
-          className="absolute top-0 bottom-0 w-12 bg-gradient-to-r from-amber-500/15 via-pink-500/20 to-transparent pointer-events-none z-10"
-          style={{ left: '50px' }}
+          className="absolute top-0 bottom-0 w-16 -translate-x-1/2 bg-gradient-to-r from-transparent via-amber-500/25 to-transparent pointer-events-none z-10"
+          style={{ left: '85%' }}
         />
 
-        {/* Flowing Notes Stream */}
+        {/* Flowing Notes Stream (Left-to-Right: 左から右へ流れるドラム譜面) */}
         <div className="relative w-full h-full">
           {visibleNotes.map((note) => {
             const timeDiff = note.time - currentTime;
-            // Strike line is at ~72px. The rest of width (from 72px to 100%) corresponds to windowSeconds.
-            // When timeDiff === 0, position is exactly 72px.
-            // When timeDiff === windowSeconds, position is ~100%.
-            const progress = timeDiff / windowSeconds; // 0 to 1
-            const leftPercent = 14 + progress * 82; // 14% corresponds to 72px
+            // Strike line is at 85% on the right. Note spawns at 12% on the left.
+            // When timeDiff === windowSeconds, leftPercent is 12% (spawns on the left).
+            // When timeDiff === 0, leftPercent is 85% (arrives at the right strike line).
+            // As time progresses, timeDiff decreases and leftPercent moves from left to right!
+            const STRIKE_PERCENT = 85;
+            const SPAWN_PERCENT = 12;
+            const progress = timeDiff / windowSeconds; // 1 (future/left) to 0 (now/right)
+            const leftPercent = STRIKE_PERCENT - progress * (STRIKE_PERCENT - SPAWN_PERCENT);
 
             const staffInfo = PART_STAFF_POSITION[note.part];
             const partConfig = DRUM_PARTS[note.part];
@@ -210,9 +223,9 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
           })}
         </div>
 
-        {/* Guide label right bottom: 流れてくる音符に合わせて準備！ */}
+        {/* Guide label right bottom */}
         <div className="absolute right-2 bottom-1 pointer-events-none text-[9px] font-mono text-slate-500 bg-slate-950/70 px-1.5 py-0.2 rounded border border-slate-800">
-          ▶ 判定線に重なる瞬間に叩く！
+          ▶ 右の判定線でヒット！
         </div>
       </div>
     </div>
