@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GameScreen as GameScreenType, SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, UserProfile } from './types';
+import { GameScreen as GameScreenType, SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, UserProfile, CourseState } from './types';
 import { SONGS } from './data/songs';
 import { SongSelectScreen } from './components/SongSelectScreen';
 import { GameScreen } from './components/GameScreen';
@@ -11,6 +11,7 @@ import { IdeasScreen } from './components/IdeasScreen';
 import { MyPageScreen } from './components/MyPageScreen';
 import { AuthModal } from './components/AuthModal';
 import { GitHubModal } from './components/GitHubModal';
+import { CourseSelectModal } from './components/CourseSelectModal';
 import { AdminLockScreen } from './components/AdminLockScreen';
 import { AdminPanelScreen } from './components/AdminPanelScreen';
 import { DeviceGateScreen } from './components/DeviceGateScreen';
@@ -46,6 +47,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState<boolean>(false);
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState<boolean>(false);
+  const [courseState, setCourseState] = useState<CourseState | null>(null);
   const [existingUsers, setExistingUsers] = useState<any[]>([]);
 
   // Developer Environment & Admin Gate
@@ -224,11 +227,68 @@ export default function App() {
   }, []);
 
   const handleStartGame = () => {
+    setCourseState(null);
     drumSynth.init();
     setScreen('game');
   };
 
+  const handleStartCourse = (newCourse: CourseState) => {
+    setCourseState(newCourse);
+    setIsCourseModalOpen(false);
+    if (newCourse.songsQueue.length > 0) {
+      setSelectedSong(newCourse.songsQueue[0]);
+    }
+    setSelectedDifficulty(newCourse.difficulty);
+    drumSynth.init();
+    setScreen('game');
+  };
+
+  const handleNextCourseSong = () => {
+    if (!courseState) return;
+    const nextIndex = courseState.currentIndex + 1;
+    let nextSong: SongData;
+
+    if (nextIndex <= courseState.songsQueue.length) {
+      nextSong = courseState.songsQueue[nextIndex - 1];
+    } else {
+      nextSong = SONGS[Math.floor(Math.random() * SONGS.length)];
+    }
+
+    setCourseState((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        currentIndex: nextIndex,
+      };
+    });
+
+    setSelectedSong(nextSong);
+    setSelectedDifficulty(courseState.difficulty);
+    drumSynth.init();
+    setScreen('game');
+  };
+
+  const handleExitCourse = () => {
+    setCourseState(null);
+    setScreen('select');
+  };
+
   const handleFinishGame = (finalScore: ScoreState, notes: RhythmNote[]) => {
+    if (courseState && courseState.isActive) {
+      setCourseState((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          accumulatedScore: prev.accumulatedScore + finalScore.score,
+          maxCombo: Math.max(prev.maxCombo, finalScore.maxCombo),
+          totalPerfect: prev.totalPerfect + finalScore.perfect,
+          totalGreat: prev.totalGreat + finalScore.great,
+          totalGood: prev.totalGood + finalScore.good,
+          totalMiss: prev.totalMiss + finalScore.miss,
+          history: [...prev.history, { song: selectedSong, score: finalScore }],
+        };
+      });
+    }
     setLastScoreState(finalScore);
     setLastPlayedNotes(notes);
     setScreen('result');
@@ -287,6 +347,13 @@ export default function App() {
             onOpenSwitchUser={() => setIsAuthModalOpen(true)}
             onOpenGitHub={() => setIsGitHubModalOpen(true)}
             onOpenAdmin={() => setScreen('admin')}
+            onOpenCourseModal={() => setIsCourseModalOpen(true)}
+            onStartRandomGame={() => {
+              const randomSong = SONGS[Math.floor(Math.random() * SONGS.length)];
+              setSelectedSong(randomSong);
+              drumSynth.init();
+              setScreen('game');
+            }}
           />
         ) : null}
 
@@ -296,7 +363,10 @@ export default function App() {
             difficulty={selectedDifficulty}
             settings={settings}
             onFinishGame={handleFinishGame}
-            onExit={() => setScreen('select')}
+            onExit={() => {
+              setCourseState(null);
+              setScreen('select');
+            }}
           />
         )}
 
@@ -308,11 +378,17 @@ export default function App() {
             notes={lastPlayedNotes}
             settings={settings}
             currentUser={currentUser}
+            courseState={courseState}
             onUpdateUserBests={(updatedUser) => setCurrentUser(updatedUser)}
             onPlayAgain={handleStartGame}
-            onSelectSong={() => setScreen('select')}
+            onSelectSong={() => {
+              setCourseState(null);
+              setScreen('select');
+            }}
             onViewLeaderboard={() => setScreen('leaderboard')}
             onOpenMyPage={() => setScreen('mypage')}
+            onNextCourseSong={handleNextCourseSong}
+            onExitCourse={handleExitCourse}
           />
         )}
 
@@ -364,6 +440,14 @@ export default function App() {
         <GitHubModal
           isOpen={isGitHubModalOpen}
           onClose={() => setIsGitHubModalOpen(false)}
+        />
+
+        {/* Course Mode Selector Modal */}
+        <CourseSelectModal
+          isOpen={isCourseModalOpen}
+          onClose={() => setIsCourseModalOpen(false)}
+          defaultDifficulty={selectedDifficulty}
+          onStartCourse={handleStartCourse}
         />
       </main>
     </div>

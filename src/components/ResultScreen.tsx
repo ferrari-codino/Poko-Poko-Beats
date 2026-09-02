@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, MascotId, UserProfile } from '../types';
+import { SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, MascotId, UserProfile, CourseState } from '../types';
 import { MascotCharacter } from './MascotCharacter';
 import confetti from 'canvas-confetti';
-import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft } from 'lucide-react';
+import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft, FastForward, CheckCircle2, Flame } from 'lucide-react';
 import { saveLocalScore, saveLocalUser } from '../utils/storageFallback';
 
 interface ResultScreenProps {
@@ -12,11 +12,14 @@ interface ResultScreenProps {
   notes: RhythmNote[];
   settings: PlayerSettings;
   currentUser?: UserProfile | null;
+  courseState?: CourseState | null;
   onUpdateUserBests?: (user: UserProfile) => void;
   onPlayAgain: () => void;
   onSelectSong: () => void;
   onViewLeaderboard: () => void;
   onOpenMyPage: () => void;
+  onNextCourseSong?: () => void;
+  onExitCourse?: () => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
@@ -26,14 +29,40 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   notes,
   settings,
   currentUser,
+  courseState,
   onUpdateUserBests,
   onPlayAgain,
   onSelectSong,
   onViewLeaderboard,
   onOpenMyPage,
+  onNextCourseSong,
+  onExitCourse,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitResult, setSubmitResult] = useState<{ rankPosition?: number; isTop30?: boolean; isNewBest?: boolean } | null>(null);
+
+  // Auto-advance countdown for course mode
+  const [courseCountdown, setCourseCountdown] = useState<number>(4);
+  const isCourseMode = Boolean(courseState && courseState.isActive);
+  const isCourseFinished = isCourseMode && courseState ? courseState.currentIndex >= courseState.totalSongs : false;
+
+  useEffect(() => {
+    if (!isCourseMode || isCourseFinished || !onNextCourseSong) return;
+
+    setCourseCountdown(4);
+    const interval = setInterval(() => {
+      setCourseCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          onNextCourseSong();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isCourseMode, isCourseFinished, onNextCourseSong, courseState?.currentIndex]);
 
   // Determine Rank based on score & accuracy
   const calculateRank = (): { rank: string; color: string; bg: string } => {
@@ -340,47 +369,128 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </div>
       </div>
 
+      {/* COURSE MODE PROGRESS OR FINISHED BANNER */}
+      {isCourseMode && courseState && (
+        <div className={`p-3 rounded-2xl border mb-2 text-center transition-all ${
+          isCourseFinished
+            ? 'bg-gradient-to-r from-amber-500/25 via-pink-500/25 to-purple-500/25 border-amber-400 shadow-lg'
+            : 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-400/50 shadow-md'
+        }`}>
+          {isCourseFinished ? (
+            <div>
+              <div className="flex items-center justify-center gap-1 text-amber-300 font-black text-sm sm:text-base">
+                <Trophy className="w-5 h-5 text-amber-400" />
+                <span>🏆 {courseState.courseTitle} 完全制覇！</span>
+              </div>
+              <div className="text-xs text-slate-300 mt-1">
+                全{courseState.totalSongs}曲完奏！ 累積ハイスコア: <strong className="text-amber-400 font-mono text-sm">{courseState.accumulatedScore.toLocaleString()}</strong> 点
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between text-xs font-black text-white mb-1">
+                <span className="flex items-center gap-1 text-cyan-300">
+                  <Flame className="w-4 h-4 text-cyan-400" />
+                  {courseState.courseTitle}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-200 text-[10px] font-mono">
+                  第 {courseState.currentIndex} / {courseState.totalSongs === Infinity ? '∞' : courseState.totalSongs} 曲 クリア！
+                </span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-amber-300 bg-slate-950/60 py-1 px-2.5 rounded-xl border border-slate-800">
+                <span className="animate-pulse">⏩</span>
+                <span>{courseCountdown}秒後に自動で次の曲へ進みます...</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ACTION BUTTONS */}
       <div className="space-y-2 mt-2">
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={onPlayAgain}
-            className="py-3 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg hover:opacity-95 active:scale-98 transition-all"
-          >
-            <RotateCcw className="w-4 h-4" />
-            もう一回あそぶ
-          </button>
+        {isCourseMode && !isCourseFinished ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={onNextCourseSong}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/25 hover:opacity-95 active:scale-98 transition-all"
+            >
+              <FastForward className="w-4 h-4 fill-current" />
+              今すぐ次の曲へ進む！ (第{(courseState?.currentIndex || 1) + 1}曲へ)
+            </button>
 
-          <button
-            type="button"
-            onClick={onViewLeaderboard}
-            className="py-3 px-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg hover:opacity-95 active:scale-98 transition-all"
-          >
-            <Trophy className="w-4 h-4" />
-            ランキングを見る
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={onExitCourse || onSelectSong}
+              className="w-full py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <ListOrdered className="w-3.5 h-3.5 text-slate-400" />
+              コースを中断して選曲へ戻る
+            </button>
+          </div>
+        ) : isCourseMode && isCourseFinished ? (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onPlayAgain}
+              className="py-3 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg hover:opacity-95 active:scale-98 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              もう一度コース挑戦
+            </button>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={onOpenMyPage}
-            className="py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
-          >
-            <User className="w-3.5 h-3.5 text-pink-400" />
-            マイページ
-          </button>
+            <button
+              type="button"
+              onClick={onExitCourse || onSelectSong}
+              className="py-3 px-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg hover:opacity-95 active:scale-98 transition-all"
+            >
+              <ListOrdered className="w-4 h-4" />
+              選曲画面へ戻る
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onPlayAgain}
+                className="py-3 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg hover:opacity-95 active:scale-98 transition-all"
+              >
+                <RotateCcw className="w-4 h-4" />
+                もう一回あそぶ
+              </button>
 
-          <button
-            type="button"
-            onClick={onSelectSong}
-            className="py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
-          >
-            <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
-            ほかの曲をえらぶ
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={onViewLeaderboard}
+                className="py-3 px-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg hover:opacity-95 active:scale-98 transition-all"
+              >
+                <Trophy className="w-4 h-4" />
+                ランキングを見る
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onOpenMyPage}
+                className="py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <User className="w-3.5 h-3.5 text-pink-400" />
+                マイページ
+              </button>
+
+              <button
+                type="button"
+                onClick={onSelectSong}
+                className="py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
+                ほかの曲をえらぶ
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

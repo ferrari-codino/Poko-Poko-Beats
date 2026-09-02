@@ -129,33 +129,20 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({
 
       {/* FILTER BAR */}
       <div className="bg-slate-900/85 p-3 rounded-3xl border border-slate-800 mb-3 space-y-2">
-        {/* Song filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setSelectedSongId('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-              selectedSongId === 'all'
-                ? 'bg-gradient-to-r from-pink-500 to-amber-500 text-white shadow'
-                : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 border border-slate-800'
-            }`}
+        {/* Song filter with Dropdown & Quick Scroll */}
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedSongId}
+            onChange={(e) => setSelectedSongId(e.target.value)}
+            className="w-full bg-slate-950/80 border border-slate-700 text-xs text-white rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-pink-500 font-bold"
           >
-            全楽曲
-          </button>
-          {SONGS.map((song) => (
-            <button
-              key={song.id}
-              type="button"
-              onClick={() => setSelectedSongId(song.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-                selectedSongId === song.id
-                  ? 'bg-gradient-to-r from-pink-500 to-amber-500 text-white shadow'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              {song.title}
-            </button>
-          ))}
+            <option value="all">全楽曲 ({SONGS.length}曲) 総合ランキング</option>
+            {SONGS.map((s, idx) => (
+              <option key={s.id} value={s.id}>
+                #{idx + 1} {s.title} ({s.category || s.genre})
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Difficulty filter */}

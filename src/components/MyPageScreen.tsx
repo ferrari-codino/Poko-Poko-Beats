@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile, Difficulty, SongData } from '../types';
 import { MASCOTS } from '../data/mascots';
 import { SONGS } from '../data/songs';
+import { Search } from 'lucide-react';
 
 interface MyPageScreenProps {
   user: UserProfile;
@@ -16,6 +17,9 @@ export const MyPageScreen: React.FC<MyPageScreenProps> = ({
   onOpenSwitchUser,
   onSelectSongToPlay,
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPlayedOnly, setFilterPlayedOnly] = useState(false);
+
   const mascot = MASCOTS[user.avatarId] || MASCOTS.pokota;
 
   // Calculate total cleared difficulties and best ranks
@@ -128,7 +132,7 @@ export const MyPageScreen: React.FC<MyPageScreenProps> = ({
       </div>
 
       {/* Personal Bests by Song */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-2.5 flex items-center justify-between">
         <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-1.5">
           <span>🏆</span> 楽曲別 自己ベスト記録
         </h3>
@@ -137,8 +141,48 @@ export const MyPageScreen: React.FC<MyPageScreenProps> = ({
         </span>
       </div>
 
+      {/* Filter and Search Bar for MyPage */}
+      <div className="mb-3 space-y-1.5">
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="記録を検索 (曲名・ジャンル...)"
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            type="button"
+            onClick={() => setFilterPlayedOnly(!filterPlayedOnly)}
+            className={`px-2.5 py-1 rounded-lg font-bold border transition ${
+              filterPlayedOnly
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+            }`}
+          >
+            {filterPlayedOnly ? '✓ プレイ済み曲のみ表示' : '全100曲を表示中'}
+          </button>
+        </div>
+      </div>
+
       <div className="space-y-3 pb-8">
-        {SONGS.map((song) => {
+        {SONGS.filter((song) => {
+          const songBests = user.personalBests?.[song.id];
+          const hasPlayed = songBests && Object.keys(songBests).length > 0;
+          if (filterPlayedOnly && !hasPlayed) return false;
+          if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            return (
+              song.title.toLowerCase().includes(q) ||
+              song.subtitle.toLowerCase().includes(q) ||
+              (song.category && song.category.toLowerCase().includes(q))
+            );
+          }
+          return true;
+        }).map((song) => {
           const songBests = user.personalBests?.[song.id] || {};
           const difficulties: Difficulty[] = ['easy', 'normal', 'hard', 'master'];
 

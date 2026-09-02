@@ -74,11 +74,40 @@ export interface JudgmentFeedback {
   isFever?: boolean;
 }
 
+export type SynthTheme =
+  | 'pop'
+  | 'funk'
+  | 'waltz'
+  | 'cyber'
+  | 'latin'
+  | 'prog'
+  | 'galaxy'
+  | 'march'
+  | 'rock'
+  | 'jazz'
+  | 'edm'
+  | 'retro'
+  | 'ballad'
+  | 'metal'
+  | 'traditional'
+  | 'fusion';
+
+export type SongCategory =
+  | 'J-POP'
+  | 'アニメ・ゲーム'
+  | 'EDM・クラブ'
+  | 'ロック'
+  | 'ジャズ・ファンク'
+  | 'クラシック・変拍子'
+  | '和風・伝統'
+  | 'ワールド・キッズ';
+
 export interface SongData {
   id: string;
   title: string;
   subtitle: string;
   genre: string;
+  category?: SongCategory;
   bpm: number;
   timeSignature: string; // e.g. "4/4", "3/8", "6/8", "7/8", "5/8", "11/8"
   duration: number; // in seconds (30s to 60s)
@@ -86,7 +115,7 @@ export interface SongData {
   previewColor: string;
   description: string;
   hasRhythmShift?: boolean; // dynamic tempo / meter changes
-  synthTheme: 'pop' | 'funk' | 'waltz' | 'cyber' | 'latin' | 'prog' | 'galaxy' | 'march';
+  synthTheme: SynthTheme;
   difficulties: {
     [key in Difficulty]: {
       notes: Omit<RhythmNote, 'id'>[];
@@ -94,6 +123,26 @@ export interface SongData {
       noteCount: number;
     };
   };
+}
+
+export interface CourseState {
+  isActive: boolean;
+  courseTitle: string;
+  mode: '3_songs' | '5_songs' | 'endless';
+  totalSongs: number; // 3, 5, or Infinity
+  currentIndex: number; // 1-based (e.g. 1 / 3)
+  difficulty: Difficulty;
+  songsQueue: SongData[];
+  accumulatedScore: number;
+  maxCombo: number;
+  totalPerfect: number;
+  totalGreat: number;
+  totalGood: number;
+  totalMiss: number;
+  history: {
+    song: SongData;
+    score: ScoreState;
+  }[];
 }
 
 export interface ScoreState {
