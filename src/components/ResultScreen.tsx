@@ -267,261 +267,322 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   }, [song.id, difficulty]);
 
   return (
-    <div className="w-full max-w-lg mx-auto min-h-full flex flex-col justify-between p-3 sm:p-5 select-none animate-fade-in">
-      {/* HEADER & MASCOT CHEER */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-xs font-black text-amber-300 shadow-sm">
-              <span>👑</span>
-              <span>USER Lv.{userLevel ?? (rpgLevel || 1)}</span>
-            </span>
-
-            {rpgLevel ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-500/20 border border-pink-400/50 text-xs font-black text-pink-300 shadow-sm">
-                <span>🎯</span>
-                <span>GAME Lv.{rpgLevel}</span>
+    <div className="w-full max-w-lg mx-auto h-full flex flex-col select-none animate-fade-in overflow-hidden relative">
+      {/* SCROLLABLE CONTENT BODY */}
+      <div
+        className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 space-y-3 custom-scrollbar overscroll-contain"
+        style={{ touchAction: 'pan-y' }}
+      >
+        {/* HEADER & MASCOT CHEER */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-xs font-black text-amber-300 shadow-sm">
+                <span>👑</span>
+                <span>USER Lv.{userLevel ?? (rpgLevel || 1)}</span>
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-xs font-black text-cyan-300">
-                <span>🎮</span>
-                <span>FREE PLAY</span>
-              </span>
-            )}
-          </div>
 
-          {submitResult?.isNewBest && (
-            <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black animate-bounce shadow">
-              ⭐ 自己ベスト更新！
-            </div>
-          )}
-        </div>
-
-        {/* Mascot cheer banner */}
-        <div className="my-2 flex justify-center">
-          <MascotCharacter
-            mascotId={currentUser?.avatarId || settings.avatarId || 'pokota'}
-            reaction="clear"
-            combo={scoreState.maxCombo}
-            showSpeechBubble={true}
-          />
-        </div>
-
-        <div className="text-center mt-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-white">{song.title}</h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {difficulty.toUpperCase()} • BPM {song.bpm} • {song.timeSignature}拍子
-          </p>
-
-          {/* Flashy English Praise Badge */}
-          <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/30 via-pink-500/30 to-cyan-500/30 border border-pink-400/50 shadow-md">
-            <span className="text-xs">✨</span>
-            <span className="text-xs font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300">
-              {rankInfo.rank === 'S+'
-                ? '👑 PERFECT MASTER DRUMMER! 🌟'
-                : rankInfo.rank === 'S'
-                ? '🔥 AWESOME GROOVE & BEATS! ⚡'
-                : rankInfo.rank === 'A'
-                ? '✨ COOL DRUM PERFORMANCE! 💫'
-                : rankInfo.rank === 'B'
-                ? '🎵 NICE BEAT & RHYTHM! 🎈'
-                : '🥁 GOOD TRY! KEEP ROCKING! 🍀'}
-            </span>
-            <span className="text-xs">🔥</span>
-          </div>
-        </div>
-      </div>
-
-      {/* SCORE & RANK CARD */}
-      <div className="bg-slate-900/90 border-2 border-indigo-500/30 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden my-3">
-        {/* Glow effect */}
-        <div className="absolute -right-8 -top-8 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-400 tracking-wider">TOTAL SCORE</span>
-            <span className="text-3xl sm:text-4xl font-black font-mono text-amber-400 tracking-tight">
-              {scoreState.score.toLocaleString()}
-            </span>
-            <span className="text-[11px] text-pink-300 font-bold mt-0.5">
-              プレイヤー: {currentUser?.nickname || settings.playerName || '名無しドラマー'}
-            </span>
-          </div>
-
-          {/* Rank Badge */}
-          <div
-            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 flex flex-col items-center justify-center shadow-lg ${rankInfo.bg}`}
-          >
-            <span className="text-[10px] font-bold text-slate-400 uppercase">RANK</span>
-            <span className={`text-2xl sm:text-3xl font-black font-mono ${rankInfo.color}`}>
-              {rankInfo.rank}
-            </span>
-          </div>
-        </div>
-
-        {/* STATS GRID */}
-        <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800 text-center">
-          <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
-            <div className="text-[10px] text-slate-400 font-bold">正確度</div>
-            <div className="text-base sm:text-lg font-black font-mono text-cyan-400">
-              {scoreState.accuracy}%
-            </div>
-          </div>
-
-          <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
-            <div className="text-[10px] text-slate-400 font-bold">MAX COMBO</div>
-            <div className="text-base sm:text-lg font-black font-mono text-amber-400">
-              {scoreState.maxCombo}
-            </div>
-          </div>
-
-          <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
-            <div className="text-[10px] text-slate-400 font-bold">順位</div>
-            <div className="text-base sm:text-lg font-black font-mono text-pink-400">
-              {submitResult?.rankPosition ? `${submitResult.rankPosition}位` : '集計中...'}
-            </div>
-          </div>
-        </div>
-
-        {/* DETAILED HIT BREAKDOWN */}
-        <div className="grid grid-cols-4 gap-1.5 mt-2.5 text-center text-xs">
-          <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-amber-500/20">
-            <div className="text-[9px] text-amber-400 font-bold">PERFECT</div>
-            <div className="font-mono font-bold text-white text-sm">{scoreState.perfect}</div>
-          </div>
-          <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-cyan-500/20">
-            <div className="text-[9px] text-cyan-400 font-bold">GREAT</div>
-            <div className="font-mono font-bold text-white text-sm">{scoreState.great}</div>
-          </div>
-          <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-emerald-500/20">
-            <div className="text-[9px] text-emerald-400 font-bold">GOOD</div>
-            <div className="font-mono font-bold text-white text-sm">{scoreState.good}</div>
-          </div>
-          <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-rose-500/20">
-            <div className="text-[9px] text-rose-400 font-bold">MISS</div>
-            <div className="font-mono font-bold text-white text-sm">{scoreState.miss}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* DEDICATED COACH LESSON REVIEW CARD (専属動物コーチのレッスン講評＆技術的アドバイス) */}
-      {rpgConfig && (
-        <div className="bg-slate-900/95 border-2 border-pink-500/40 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden mb-3">
-          {/* Header with Coach info */}
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-            <div
-              className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${coach.avatarBg} border flex items-center justify-center text-2xl shadow-md flex-shrink-0`}
-            >
-              {coach.emoji}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-black text-white" style={{ color: coach.color }}>
-                  {coach.name} のレッスン講評
+              {rpgLevel ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-500/20 border border-pink-400/50 text-xs font-black text-pink-300 shadow-sm">
+                  <span>🎯</span>
+                  <span>GAME Lv.{rpgLevel}</span>
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  Lv.{rpgLevel}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400">課題: {rpgConfig.title}</p>
-            </div>
-          </div>
-
-          {/* 1. やさしいコメント (Kind praise) */}
-          <div className="mt-3 p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <span className="text-base flex-shrink-0">💬</span>
-            <div>
-              <div className="text-[10px] font-bold text-pink-300 mb-0.5">やさしい励ましコメント:</div>
-              <p className="text-xs text-slate-200 leading-relaxed font-medium">
-                {rpgConfig.coachAdvice.praise}
-              </p>
-            </div>
-          </div>
-
-          {/* 2. ドラムに関する技術的コメント（ミュージシャン視点） */}
-          <div className="mt-2.5 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
-            <span className="text-base flex-shrink-0">🎯</span>
-            <div>
-              <div className="text-[10px] font-bold text-amber-300 mb-0.5">技術的なドラムアドバイス:</div>
-              <p className="text-xs text-amber-100/90 leading-relaxed">
-                {rpgConfig.coachAdvice.technicalTip}
-              </p>
-            </div>
-          </div>
-
-          {/* Level Clearance Status & Promotion Fanfare */}
-          <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
-            <div>
-              {isRPGCleared ? (
-                <div className="flex items-center gap-1.5 text-emerald-400 font-black text-xs sm:text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>レッスン課題クリア！ 昇格達成！</span>
-                </div>
               ) : (
-                <div className="text-xs text-amber-300 font-bold">
-                  惜しい！あと少しでクリア！再挑戦してみよう！
-                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-xs font-black text-cyan-300">
+                  <span>🎮</span>
+                  <span>FREE PLAY</span>
+                </span>
               )}
             </div>
 
-            {isRPGCleared && onNextRPGLevel && (
-              <button
-                onClick={() => onNextRPGLevel((rpgLevel || 1) + 1)}
-                className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md hover:opacity-90 active:scale-95 transition"
-              >
-                <span>次のレベル（Lv.{(rpgLevel || 1) + 1}）へ！</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+            {submitResult?.isNewBest && (
+              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black animate-bounce shadow">
+                ⭐ 自己ベスト更新！
+              </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* COURSE MODE PROGRESS OR FINISHED BANNER */}
-      {isCourseMode && courseState && (
-        <div className={`p-3 rounded-2xl border mb-2 text-center transition-all ${
-          isCourseFinished
-            ? 'bg-gradient-to-r from-amber-500/25 via-pink-500/25 to-purple-500/25 border-amber-400 shadow-lg'
-            : 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-400/50 shadow-md'
-        }`}>
-          {isCourseFinished ? (
-            <div>
-              <div className="flex items-center justify-center gap-1 text-amber-300 font-black text-sm sm:text-base">
-                <Trophy className="w-5 h-5 text-amber-400" />
-                <span>🏆 {courseState.courseTitle} 完全制覇！</span>
-              </div>
-              <div className="text-xs text-slate-300 mt-1">
-                全{courseState.totalSongs}曲完奏！ 累積ハイスコア: <strong className="text-amber-400 font-mono text-sm">{courseState.accumulatedScore.toLocaleString()}</strong> 点
+          {/* Mascot cheer banner */}
+          <div className="my-2 flex justify-center">
+            <MascotCharacter
+              mascotId={currentUser?.avatarId || settings.avatarId || 'pokota'}
+              reaction="clear"
+              combo={scoreState.maxCombo}
+              showSpeechBubble={true}
+            />
+          </div>
+
+          <div className="text-center mt-1">
+            <h1 className="text-2xl sm:text-3xl font-black text-white">{song.title}</h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {difficulty.toUpperCase()} • BPM {song.bpm} • {song.timeSignature}拍子
+            </p>
+
+            {/* Flashy English Praise Badge */}
+            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/30 via-pink-500/30 to-cyan-500/30 border border-pink-400/50 shadow-md">
+              <span className="text-xs">✨</span>
+              <span className="text-xs font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300">
+                {rankInfo.rank === 'S+'
+                  ? '👑 PERFECT MASTER DRUMMER! 🌟'
+                  : rankInfo.rank === 'S'
+                  ? '🔥 AWESOME GROOVE & BEATS! ⚡'
+                  : rankInfo.rank === 'A'
+                  ? '✨ COOL DRUM PERFORMANCE! 💫'
+                  : rankInfo.rank === 'B'
+                  ? '🎵 NICE BEAT & RHYTHM! 🎈'
+                  : '🥁 GOOD TRY! KEEP ROCKING! 🍀'}
+              </span>
+              <span className="text-xs">🔥</span>
+            </div>
+          </div>
+        </div>
+
+        {/* SCORE & RANK CARD */}
+        <div className="bg-slate-900/90 border-2 border-indigo-500/30 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden my-1">
+          {/* Glow effect */}
+          <div className="absolute -right-8 -top-8 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-slate-400 tracking-wider">TOTAL SCORE</span>
+              <span className="text-3xl sm:text-4xl font-black font-mono text-amber-400 tracking-tight">
+                {scoreState.score.toLocaleString()}
+              </span>
+              <span className="text-[11px] text-pink-300 font-bold mt-0.5">
+                プレイヤー: {currentUser?.nickname || settings.playerName || '名無しドラマー'}
+              </span>
+            </div>
+
+            {/* Rank Badge */}
+            <div
+              className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 flex flex-col items-center justify-center shadow-lg ${rankInfo.bg}`}
+            >
+              <span className="text-[10px] font-bold text-slate-400 uppercase">RANK</span>
+              <span className={`text-2xl sm:text-3xl font-black font-mono ${rankInfo.color}`}>
+                {rankInfo.rank}
+              </span>
+            </div>
+          </div>
+
+          {/* STATS GRID */}
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800 text-center">
+            <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
+              <div className="text-[10px] text-slate-400 font-bold">正確度</div>
+              <div className="text-base sm:text-lg font-black font-mono text-cyan-400">
+                {scoreState.accuracy}%
               </div>
             </div>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between text-xs font-black text-white mb-1">
-                <span className="flex items-center gap-1 text-cyan-300">
-                  <Flame className="w-4 h-4 text-cyan-400" />
-                  {courseState.courseTitle}
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-200 text-[10px] font-mono">
-                  第 {courseState.currentIndex} / {courseState.totalSongs === Infinity ? '∞' : courseState.totalSongs} 曲 クリア！
-                </span>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-xs font-bold text-amber-300 bg-slate-950/60 py-1 px-2.5 rounded-xl border border-slate-800">
-                <span className="animate-pulse">⏩</span>
-                <span>{courseCountdown}秒後に自動で次の曲へ進みます...</span>
+
+            <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
+              <div className="text-[10px] text-slate-400 font-bold">MAX COMBO</div>
+              <div className="text-base sm:text-lg font-black font-mono text-amber-400">
+                {scoreState.maxCombo}
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* ACTION BUTTONS */}
-      <div className="space-y-2 mt-2">
-        {isCourseMode && !isCourseFinished ? (
+            <div className="bg-slate-950/60 p-2 rounded-2xl border border-slate-800/50">
+              <div className="text-[10px] text-slate-400 font-bold">順位</div>
+              <div className="text-base sm:text-lg font-black font-mono text-pink-400">
+                {submitResult?.rankPosition ? `${submitResult.rankPosition}位` : '集計中...'}
+              </div>
+            </div>
+          </div>
+
+          {/* DETAILED HIT BREAKDOWN */}
+          <div className="grid grid-cols-4 gap-1.5 mt-2.5 text-center text-xs">
+            <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-amber-500/20">
+              <div className="text-[9px] text-amber-400 font-bold">PERFECT</div>
+              <div className="font-mono font-bold text-white text-sm">{scoreState.perfect}</div>
+            </div>
+            <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-cyan-500/20">
+              <div className="text-[9px] text-cyan-400 font-bold">GREAT</div>
+              <div className="font-mono font-bold text-white text-sm">{scoreState.great}</div>
+            </div>
+            <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-emerald-500/20">
+              <div className="text-[9px] text-emerald-400 font-bold">GOOD</div>
+              <div className="font-mono font-bold text-white text-sm">{scoreState.good}</div>
+            </div>
+            <div className="bg-slate-950/40 py-1.5 px-1 rounded-xl border border-rose-500/20">
+              <div className="text-[9px] text-rose-400 font-bold">MISS</div>
+              <div className="font-mono font-bold text-white text-sm">{scoreState.miss}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* DEDICATED COACH LESSON REVIEW CARD (専属動物コーチのレッスン講評＆技術的アドバイス) */}
+        {rpgConfig && (
+          <div className="bg-slate-900/95 border-2 border-pink-500/40 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden my-2">
+            {/* Header with Coach info */}
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+              <div
+                className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${coach.avatarBg} border flex items-center justify-center text-2xl shadow-md flex-shrink-0`}
+              >
+                {coach.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black text-white" style={{ color: coach.color }}>
+                    {coach.name} のレッスン講評
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    Lv.{rpgLevel}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">課題: {rpgConfig.title}</p>
+              </div>
+            </div>
+
+            {/* 1. やさしいコメント (Kind praise) */}
+            <div className="mt-3 p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+              <span className="text-base flex-shrink-0">💬</span>
+              <div>
+                <div className="text-[10px] font-bold text-pink-300 mb-0.5">やさしい励ましコメント:</div>
+                <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                  {rpgConfig.coachAdvice.praise}
+                </p>
+              </div>
+            </div>
+
+            {/* 2. ドラムに関する技術的コメント（ミュージシャン視点） */}
+            <div className="mt-2.5 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+              <span className="text-base flex-shrink-0">🎯</span>
+              <div>
+                <div className="text-[10px] font-bold text-amber-300 mb-0.5">技術的なドラムアドバイス:</div>
+                <p className="text-xs text-amber-100/90 leading-relaxed">
+                  {rpgConfig.coachAdvice.technicalTip}
+                </p>
+              </div>
+            </div>
+
+            {/* Level Clearance Status & Promotion Fanfare */}
+            <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
+              <div>
+                {isRPGCleared ? (
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-black text-xs sm:text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>レッスン課題クリア！ 昇格達成！</span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-amber-300 font-bold">
+                    惜しい！あと少しでクリア！再挑戦してみよう！
+                  </div>
+                )}
+              </div>
+
+              {isRPGCleared && onNextRPGLevel && (
+                <button
+                  type="button"
+                  onClick={() => onNextRPGLevel((rpgLevel || 1) + 1)}
+                  className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md hover:opacity-90 active:scale-95 transition"
+                >
+                  <span>次のLv.{(rpgLevel || 1) + 1}へ！</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* COURSE MODE PROGRESS OR FINISHED BANNER */}
+        {isCourseMode && courseState && (
+          <div className={`p-3 rounded-2xl border my-2 text-center transition-all ${
+            isCourseFinished
+              ? 'bg-gradient-to-r from-amber-500/25 via-pink-500/25 to-purple-500/25 border-amber-400 shadow-lg'
+              : 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border-cyan-400/50 shadow-md'
+          }`}>
+            {isCourseFinished ? (
+              <div>
+                <div className="flex items-center justify-center gap-1 text-amber-300 font-black text-sm sm:text-base">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                  <span>🏆 {courseState.courseTitle} 完全制覇！</span>
+                </div>
+                <div className="text-xs text-slate-300 mt-1">
+                  全{courseState.totalSongs}曲完奏！ 累積ハイスコア: <strong className="text-amber-400 font-mono text-sm">{courseState.accumulatedScore.toLocaleString()}</strong> 点
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between text-xs font-black text-white mb-1">
+                  <span className="flex items-center gap-1 text-cyan-300">
+                    <Flame className="w-4 h-4 text-cyan-400" />
+                    {courseState.courseTitle}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/30 text-cyan-200 text-[10px] font-mono">
+                    第 {courseState.currentIndex} / {courseState.totalSongs === Infinity ? '∞' : courseState.totalSongs} 曲 クリア！
+                  </span>
+                </div>
+                <div className="flex items-center justify-center gap-2 text-xs font-bold text-amber-300 bg-slate-950/60 py-1 px-2.5 rounded-xl border border-slate-800">
+                  <span className="animate-pulse">⏩</span>
+                  <span>{courseCountdown}秒後に自動で次の曲へ進みます...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bottom spacer for smooth scrolling */}
+        <div className="h-2" />
+      </div>
+
+      {/* STICKY BOTTOM ACTION BAR (画面下部に常時表示・固定配置され絶対に押せるボトムバー) */}
+      <div className="shrink-0 p-3 sm:p-4 bg-slate-950/95 border-t border-slate-800/90 shadow-[0_-8px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl z-20 space-y-2">
+        {rpgLevel ? (
+          /* レッスンモード専用アクション */
+          <div className="space-y-2">
+            {isRPGCleared && onNextRPGLevel ? (
+              <button
+                id="next-rpg-level-btn"
+                type="button"
+                onClick={() => onNextRPGLevel((rpgLevel || 1) + 1)}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-pink-500 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-pink-500/25 active:scale-98 transition-all"
+              >
+                <Sparkles className="w-4 h-4 fill-current text-slate-950" />
+                <span>🌟 次のレッスン（Lv.{(rpgLevel || 1) + 1}）へ進む！</span>
+                <ChevronRight className="w-5 h-5 stroke-[3]" />
+              </button>
+            ) : (
+              <button
+                id="retry-rpg-level-btn"
+                type="button"
+                onClick={onPlayAgain}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-amber-500/25 active:scale-98 transition-all"
+              >
+                <RotateCcw className="w-4 h-4 stroke-[3]" />
+                <span>🔄 もう一度挑戦する！</span>
+              </button>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              {isRPGCleared && (
+                <button
+                  type="button"
+                  onClick={onPlayAgain}
+                  className="py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-98"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                  <span>もう一度練習</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onSelectSong}
+                className={`py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-98 ${
+                  !isRPGCleared ? 'col-span-2' : ''
+                }`}
+              >
+                <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
+                <span>レッスン・曲選択へ戻る</span>
+              </button>
+            </div>
+          </div>
+        ) : isCourseMode && !isCourseFinished ? (
+          /* コースモード進行中 */
           <div className="space-y-2">
             <button
               type="button"
               onClick={onNextCourseSong}
-              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/25 hover:opacity-95 active:scale-98 transition-all"
+              className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/25 hover:opacity-95 active:scale-98 transition-all"
             >
               <FastForward className="w-4 h-4 fill-current" />
               今すぐ次の曲へ進む！ (第{(courseState?.currentIndex || 1) + 1}曲へ)
@@ -530,13 +591,14 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             <button
               type="button"
               onClick={onExitCourse || onSelectSong}
-              className="w-full py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+              className="w-full py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-98"
             >
               <ListOrdered className="w-3.5 h-3.5 text-slate-400" />
               コースを中断して選曲へ戻る
             </button>
           </div>
         ) : isCourseMode && isCourseFinished ? (
+          /* コース完走 */
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -557,6 +619,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             </button>
           </div>
         ) : (
+          /* フリープレイ通常時 */
           <>
             <div className="grid grid-cols-2 gap-2">
               <button
