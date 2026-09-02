@@ -374,6 +374,7 @@ export default function App() {
               setRpgProgress(loadRPGProgress());
               setIsRPGModalOpen(true);
             }}
+            onStartRPGLevel={handleStartRPGLevel}
             rpgLevel={rpgProgress.currentLevel}
             onStartRandomGame={() => {
               setActiveRPGLevel(null);

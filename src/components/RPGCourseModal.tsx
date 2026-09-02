@@ -67,7 +67,7 @@ export const RPGCourseModal: React.FC<RPGCourseModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-white">
-                  ドラムRPG育成 ＆ レッスンコース
+                  ドラムレッスン（ステップアップ）
                 </h2>
                 <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950">
                   PLAYER Lv.{rpgProgress.currentLevel}

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { SongData, Difficulty, UserProfile, SongCategory } from '../types';
 import { SONGS, SONG_CATEGORIES } from '../data/songs';
 import { MASCOTS } from '../data/mascots';
+import { getRPGLevelConfig } from '../data/rpgCurriculum';
 import {
   Play,
   Trophy,
@@ -38,6 +39,7 @@ interface SongSelectScreenProps {
   onOpenCourseModal: () => void;
   onStartRandomGame?: () => void;
   onOpenRPGModal?: () => void;
+  onStartRPGLevel?: (level: number) => void;
   rpgLevel?: number;
 }
 
@@ -59,10 +61,12 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
   onOpenCourseModal,
   onStartRandomGame,
   onOpenRPGModal,
+  onStartRPGLevel,
   rpgLevel = 1,
 }) => {
   const currentDiffInfo = selectedSong.difficulties[selectedDifficulty];
   const mascot = MASCOTS[currentUser?.avatarId || 'pokota'] || MASCOTS.pokota;
+  const currentLevelConfig = getRPGLevelConfig(rpgLevel || 1);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | SongCategory>('ALL');
@@ -244,38 +248,82 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
         </button>
       </div>
 
-      {/* RPG TRAINING & COACH PROMOTION BANNER */}
+      {/* RPG TRAINING & COACH PROMOTION BANNER (プレイヤーを初級レッスンへ惹きつける誘導カード) */}
       {onOpenRPGModal && (
-        <button
-          id="open-rpg-course-btn"
-          type="button"
-          onClick={onOpenRPGModal}
-          className="w-full mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-pink-500/20 via-amber-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 border-2 border-pink-400/50 shadow-md flex items-center justify-between text-left transition-all active:scale-98 group"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-pink-500 flex items-center justify-center text-xl shadow flex-shrink-0">
-              🎓
+        <div className="w-full mb-2.5 p-3 rounded-2xl bg-gradient-to-r from-pink-950/70 via-purple-950/60 to-slate-900/80 border-2 border-pink-400/60 shadow-[0_0_20px_rgba(244,114,182,0.15)] relative overflow-hidden group">
+          {/* Subtle Glow Accents */}
+          <div className="absolute -right-8 -top-8 w-28 h-28 bg-pink-500/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-8 -bottom-8 w-28 h-28 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
+
+          {/* Top Recommendation Badge */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-black tracking-wide shadow-sm animate-pulse">
+              <span>🔰</span>
+              <span>おすすめ！ ゼロから上達ステップアップ</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-black text-white group-hover:text-amber-300 transition-colors">
-                  ドラムRPG育成 ＆ レッスンコース
-                </span>
-                <span className="text-[10px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950">
-                  PLAYER Lv.{rpgLevel}
+            <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40">
+              👑 PLAYER Lv.{rpgLevel}
+            </span>
+          </div>
+
+          {/* Card Body: Level Info & Lesson Goals */}
+          <div className="flex items-start gap-3 mb-2.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center text-2xl shadow-lg border-2 border-white/60 shrink-0">
+              🥁
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-xs sm:text-sm font-black text-white leading-tight">
+                  ドラムレッスン（ステップアップ）
+                </h2>
+                <span className="text-[10px] text-pink-300 font-bold bg-pink-500/20 px-1.5 py-0.2 rounded border border-pink-500/30">
+                  {rpgLevel <= 20 ? '初級コース' : rpgLevel <= 60 ? '中級コース' : '上級コース'}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-300">
-                初級(Lv.1〜)・中級(Lv.21〜)・上級(Lv.61〜) 専属動物コーチの講評つき！
+              <div className="text-[11px] font-black text-amber-300 mt-0.5 truncate">
+                {currentLevelConfig?.title || `Level ${rpgLevel}: はじめのドン！`}
+              </div>
+              <p className="text-[10px] text-slate-300 line-clamp-1 mt-0.5">
+                {rpgLevel === 1
+                  ? '🎵 課題曲: はじめてのマーチ (ゆったりBPM 60・光ガイド1.5秒前・足だけで安心クリア！)'
+                  : currentLevelConfig?.focusLesson}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-xs font-bold text-pink-300 bg-pink-500/20 px-2 py-1 rounded-xl border border-pink-500/40 shrink-0">
-            <span>レッスン</span>
-            <span>▷</span>
+          {/* Action Buttons: Direct Start & Curriculum Overview */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-pink-500/20">
+            {/* Direct Level 1 / Current Level Start Button */}
+            <button
+              id="start-current-rpg-level-btn"
+              type="button"
+              onClick={() => {
+                if (onStartRPGLevel) {
+                  onStartRPGLevel(rpgLevel || 1);
+                } else {
+                  onOpenRPGModal();
+                }
+              }}
+              className="py-2 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-black text-xs shadow-md border border-pink-300/50 flex items-center justify-center gap-1.5 transition-all active:scale-95 group/btn"
+            >
+              <Play className="w-3.5 h-3.5 fill-current text-white group-hover/btn:scale-110 transition-transform" />
+              <span>
+                {rpgLevel === 1 ? '▶ 今すぐLv.1をスタート！' : `▶ Lv.${rpgLevel} レッスン開始`}
+              </span>
+            </button>
+
+            {/* View Full Curriculum Modal Button */}
+            <button
+              id="open-rpg-curriculum-modal-btn"
+              type="button"
+              onClick={onOpenRPGModal}
+              className="py-2 px-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-pink-300 font-bold text-xs border border-slate-700/80 flex items-center justify-center gap-1 transition-all active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>全100段階カリキュラム ▷</span>
+            </button>
           </div>
-        </button>
+        </div>
       )}
 
       {/* MODE BUTTONS: Course Mode, Random, Free Play, Ranking */}
@@ -418,10 +466,16 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
                       <Music2 className="w-4 h-4 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-black text-xs sm:text-sm text-white truncate">
                           {song.title}
                         </span>
+                        {song.id === 'baby-march' && (
+                          <span className="text-[8px] px-1.5 py-0.2 rounded bg-pink-500/30 text-pink-300 border border-pink-400/50 font-black shrink-0 animate-pulse flex items-center gap-0.5">
+                            <span>🔰</span>
+                            <span>レッスンLv.1 対象曲</span>
+                          </span>
+                        )}
                         {song.category && (
                           <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-medium shrink-0">
                             {song.category}

@@ -237,6 +237,10 @@ export const DrumSet: React.FC<DrumSetProps> = ({
     const compactScaleMultiplier = drumLayout === 'compact' ? 1.08 : 1.0;
     const scaleFactor = baseScale * compactScaleMultiplier;
 
+    // Realistic physical strike deflection: cymbals tilt & wobble; drums compress slightly
+    const cymbalTilt = isPressed ? 18 : 0;
+    const drumCompress = isPressed ? 0.94 : 1.0;
+
     return (
       <div
         key={part}
@@ -249,15 +253,27 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           !isUnlocked ? 'opacity-35 grayscale pointer-events-none' : ''
         } ${customClass}`}
         style={{
-          transform: `scale(${isPressed ? scaleFactor * 0.94 : scaleFactor}) rotate(${wobble}deg)`,
-          transformOrigin: isCymbal ? 'center' : 'bottom center',
+          transform: `scale(${scaleFactor * drumCompress}) rotate(${wobble}deg) ${
+            isCymbal ? `rotateX(${cymbalTilt}deg)` : ''
+          }`,
+          transformOrigin: isCymbal ? '50% 45%' : 'bottom center',
+          filter: isPressed ? 'brightness(1.15)' : 'none',
           ...customStyle,
         }}
       >
+        {/* CAST SHADOW ON DRUM MAT (床に落ちる立体的な影) */}
+        <div
+          className="absolute -bottom-3 inset-x-2 h-4 rounded-full bg-black/60 blur-md pointer-events-none -z-10 transition-opacity"
+          style={{
+            transform: 'rotateX(60deg) scale(1.1)',
+            opacity: isPressed ? 0.9 : 0.6,
+          }}
+        />
+
         {/* READ-AHEAD "PREPARE" COUNTDOWN RING (先読みガイドオーラ) */}
         {isUnlocked && isPrepareActive && approach > 0 && approach < 1 && (
           <div
-            className="absolute rounded-full pointer-events-none transition-all duration-75"
+            className="absolute rounded-full pointer-events-none transition-all duration-75 z-40"
             style={{
               border: `3px solid ${config.color}`,
               width: `${100 + (1 - approach) * 110}%`,
@@ -266,7 +282,6 @@ export const DrumSet: React.FC<DrumSetProps> = ({
               boxShadow: `0 0 16px ${config.glowColor}, inset 0 0 8px ${config.glowColor}`,
             }}
           >
-            {/* Small PREPARE tag over drum pad */}
             <span
               className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-mono tracking-tighter whitespace-nowrap shadow"
             >
@@ -278,7 +293,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {/* HIT GLOW BURST HALO */}
         {isGlowing && isUnlocked && (
           <div
-            className="absolute inset-[-8px] rounded-full animate-ping pointer-events-none"
+            className="absolute inset-[-10px] rounded-full animate-ping pointer-events-none z-30"
             style={{
               backgroundColor: config.glowColor,
               opacity: glowInfo.glowIntensity * 0.75,
@@ -286,115 +301,292 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           />
         )}
 
-        {/* 3D CYLINDER SHELL DEPTH & HARDWARE */}
-        {/* Render realistic 3D angled Drum / Cymbal Body */}
+        {/* ========================================================================= */}
+        {/* AUTHENTIC 3D DRUM KIT PIECES (プロミュージシャンが唸る本物のドラム造形) */}
+        {/* ========================================================================= */}
+
         {isCymbal ? (
-          // REALISTIC HAMMERED BRONZE CYMBAL (斜めに傾いたブームシンバル)
+          /* --- B20 BRONZE CYMBAL WITH LATHE RIDGES, BELL DOME, FELT & WINGNUT --- */
           <div
-            className="relative w-full h-full rounded-full flex items-center justify-center border-2 transition-transform shadow-2xl"
+            className="relative w-full h-full rounded-full flex items-center justify-center transition-transform shadow-2xl"
             style={{
-              borderColor: isGlowing ? config.color : '#b45309',
+              transform: 'rotateX(25deg)',
               background: isGlowing
-                ? `radial-gradient(circle at 35% 35%, #fef08a 0%, ${config.color} 50%, #92400e 100%)`
-                : 'radial-gradient(circle at 35% 35%, #fde047 0%, #d97706 45%, #92400e 80%, #713f12 100%)',
+                ? `radial-gradient(circle at 38% 36%, #fffbeb 0%, #fef08a 20%, ${config.color} 55%, #b45309 85%, #78350f 100%)`
+                : 'radial-gradient(circle at 38% 36%, #fef9c3 0%, #fde047 18%, #d97706 48%, #b45309 72%, #78350f 92%, #451a03 100%)',
               boxShadow: isGlowing
-                ? `0 0 20px ${config.glowColor}, 0 8px 24px rgba(0,0,0,0.6)`
-                : '0 8px 20px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4)',
-              transform: 'rotateX(20deg)',
+                ? `0 0 25px ${config.glowColor}, 0 14px 28px rgba(0,0,0,0.85), inset 0 2px 6px rgba(255,255,255,0.7)`
+                : '0 12px 26px rgba(0,0,0,0.85), inset 0 2px 7px rgba(255,255,255,0.45), inset 0 -3px 8px rgba(0,0,0,0.6)',
+              border: `2px solid ${isGlowing ? config.color : '#92400e'}`,
             }}
           >
-            {/* Concentric Lathe Grooves (レイジングライン) */}
-            <div className="absolute inset-2 rounded-full border border-amber-800/40 pointer-events-none" />
-            <div className="absolute inset-4 rounded-full border border-amber-900/30 pointer-events-none" />
+            {/* Lathe Concentric Turning Ridges (旋盤削り出しの同心円状レイジング溝) */}
+            <div className="absolute inset-1.5 rounded-full border border-amber-950/30 pointer-events-none" />
+            <div className="absolute inset-3 rounded-full border border-amber-800/25 pointer-events-none" />
+            <div className="absolute inset-5 rounded-full border border-amber-900/30 pointer-events-none" />
+            <div className="absolute inset-7 rounded-full border border-amber-700/20 pointer-events-none" />
 
-            {/* Cymbal Center Raised Bell Cup (カップ) */}
-            <div className="w-1/3 h-1/3 rounded-full bg-gradient-to-br from-amber-200 to-amber-700 border border-amber-950 shadow-md flex items-center justify-center pointer-events-none">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-950 shadow-inner" />
-            </div>
+            {/* Hand-Hammered Dimple Texture (ハンドハンマリング槌目模様) */}
+            <div
+              className="absolute inset-2 rounded-full opacity-20 pointer-events-none bg-[radial-gradient(#451a03_1px,transparent_1px)]"
+              style={{ backgroundSize: '7px 7px' }}
+            />
 
-            {/* Cymbal Tilter & Boom Stand Arm under cymbal */}
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-2 h-4 bg-gradient-to-r from-slate-400 to-slate-600 rounded-b shadow pointer-events-none z-[-1]" />
-          </div>
-        ) : isKick ? (
-          // REALISTIC 22" BASS DRUM (大きな円筒シェルとフロントヘッド、フットペダル)
-          <div
-            className={`relative w-full h-full rounded-3xl border-4 transition-all duration-75 flex flex-col items-center justify-between p-2 shadow-2xl ${
-              kickPulse ? 'scale-105' : ''
-            }`}
-            style={{
-              borderColor: isGlowing ? config.color : '#e2e8f0',
-              background: isGlowing
-                ? `radial-gradient(circle at 50% 50%, #334155 0%, #0f172a 70%, ${config.color} 100%)`
-                : 'radial-gradient(circle at 50% 40%, #1e293b 0%, #0f172a 60%, #020617 100%)',
-              boxShadow: isGlowing
-                ? `0 0 28px ${config.glowColor}, inset 0 0 20px ${config.glowColor}`
-                : '0 12px 28px rgba(0,0,0,0.8), inset 0 3px 10px rgba(255,255,255,0.1)',
-            }}
-          >
-            {/* Chrome Tension Claws on Kick Hoop (テンションボルト) */}
-            <div className="absolute -top-1 left-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
-            <div className="absolute -top-1 right-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
-            <div className="absolute -bottom-1 left-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
-            <div className="absolute -bottom-1 right-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
+            {/* Specular Radial Light Reflection (シンバルの金属放射光ハイライト) */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none opacity-25"
+              style={{
+                background: 'conic-gradient(from 45deg at 50% 50%, rgba(255,255,255,0.8) 0deg, transparent 40deg, rgba(255,255,255,0.8) 90deg, transparent 130deg, rgba(255,255,255,0.8) 180deg, transparent 220deg, rgba(255,255,255,0.8) 270deg, transparent 310deg, rgba(255,255,255,0.8) 360deg)',
+              }}
+            />
 
-            {/* Front Head Port Hole (マイク穴) */}
-            <div className="absolute right-4 bottom-3 w-7 h-7 rounded-full bg-slate-950 border border-slate-700 shadow-inner flex items-center justify-center pointer-events-none">
-              <div className="w-5 h-5 rounded-full bg-black" />
-            </div>
-
-            {/* Drum Center Logo / Beater Impact Area */}
-            <div className="my-auto flex flex-col items-center justify-center pointer-events-none">
-              <div
-                className="w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors"
-                style={{
-                  borderColor: isGlowing ? config.color : '#475569',
-                  backgroundColor: isGlowing ? `${config.glowColor}40` : 'rgba(15,23,42,0.6)',
-                }}
-              >
-                <span className="text-sm">🥁</span>
+            {/* Raised Bell (立体カップ / ドーム) */}
+            <div
+              className="relative w-[34%] h-[34%] rounded-full flex items-center justify-center border-2 border-amber-950 shadow-lg pointer-events-none"
+              style={{
+                background: 'radial-gradient(circle at 35% 35%, #fef08a 0%, #d97706 45%, #78350f 100%)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.6)',
+              }}
+            >
+              {/* Black Cymbal Cushion Felt (シンバル保護フェルトワッシャー) */}
+              <div className="w-[42%] h-[42%] rounded-full bg-slate-950 border border-slate-700 shadow-inner flex items-center justify-center">
+                {/* Chrome Wingnut (蝶ネジ / クロームウィングボルト) */}
+                <div className="relative w-3.5 h-1.5 bg-gradient-to-r from-slate-200 via-white to-slate-300 rounded shadow border border-slate-600 flex items-center justify-center">
+                  <div className="w-1 h-1 rounded-full bg-slate-700" />
+                </div>
               </div>
             </div>
 
-            {/* Chrome Kick Pedal Beater Footplate in front */}
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-10 h-6 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-lg border border-slate-500 shadow-md flex items-center justify-center pointer-events-none z-10">
-              <div className="w-1 h-3 bg-slate-700 rounded-full" />
-            </div>
-          </div>
-        ) : (
-          // REALISTIC TOMS & SNARE (立体シェル・スチールフープ・ホワイトコーテッドヘッド)
-          <div
-            className="relative w-full h-full rounded-full border-4 transition-transform shadow-2xl flex items-center justify-center"
-            style={{
-              borderColor: isGlowing ? config.color : isSnare ? '#94a3b8' : '#64748b',
-              background: isSnare
-                ? isGlowing
-                  ? `radial-gradient(circle at 40% 40%, #ffffff 0%, #f1f5f9 60%, ${config.color} 100%)`
-                  : 'radial-gradient(circle at 40% 40%, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%)'
-                : isGlowing
-                ? `radial-gradient(circle at 40% 40%, #38bdf8 0%, #0284c7 60%, #0369a1 100%)`
-                : 'radial-gradient(circle at 40% 40%, #1e293b 0%, #0f172a 75%, #020617 100%)',
-              boxShadow: isGlowing
-                ? `0 0 20px ${config.glowColor}, 0 8px 20px rgba(0,0,0,0.6)`
-                : '0 8px 18px rgba(0,0,0,0.6), inset 0 2px 6px rgba(255,255,255,0.3)',
-              transform: 'rotateX(22deg)',
-            }}
-          >
-            {/* Chrome Hoop Rim & Tension Lugs (フープとラグ) */}
-            <div className="absolute inset-1 rounded-full border border-slate-400/40 pointer-events-none" />
-
-            {/* Snare specific Buzz Ring / Muffle Ring */}
-            {isSnare && (
-              <div className="absolute inset-2.5 rounded-full border border-slate-300/60 pointer-events-none shadow-inner flex items-center justify-center">
-                <div className="w-3.5 h-3.5 rounded-full bg-slate-300/40" />
-              </div>
+            {/* Hi-Hat Stand Dual Cymbals / Clutch Detail */}
+            {part === 'hihatClosed' && (
+              <div className="absolute -bottom-2 inset-x-4 h-2 bg-gradient-to-b from-amber-950 to-black rounded-b-full opacity-70 pointer-events-none" />
             )}
 
-            {/* Floor Tom Legs or Tom Lugs */}
-            {isFloorTom && (
+            {/* Stand Boom Tilter Arm below cymbal */}
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-2 h-5 bg-gradient-to-r from-slate-400 via-slate-200 to-slate-500 rounded-b shadow-md pointer-events-none -z-10" />
+          </div>
+        ) : isKick ? (
+          /* --- 22" BASS DRUM (WOOD HOOPS, CHROME CLAWS, SLAM PAD & KICK PEDAL) --- */
+          <div
+            className={`relative w-full h-full rounded-[30px] transition-all duration-75 flex flex-col items-center justify-between p-1.5 shadow-2xl ${
+              kickPulse ? 'scale-[1.03]' : ''
+            }`}
+            style={{
+              transform: 'rotateX(15deg)',
+              background: '#090d16',
+              boxShadow: isGlowing
+                ? `0 0 35px ${config.glowColor}, 0 16px 36px rgba(0,0,0,0.9)`
+                : '0 16px 36px rgba(0,0,0,0.95), inset 0 2px 8px rgba(255,255,255,0.2)',
+              border: `3px solid ${isGlowing ? config.color : '#475569'}`,
+            }}
+          >
+            {/* Outer Heavy Wood Hoop (ブラックラッカー＋インレイ帯) */}
+            <div className="absolute inset-0.5 rounded-[28px] border-4 border-slate-900 pointer-events-none">
+              <div className="w-full h-full rounded-[24px] border border-amber-500/30" />
+            </div>
+
+            {/* Chrome Tension Claws & T-Rod Bolts (テンションクロー金具) */}
+            <div className="absolute -top-1.5 left-6 w-3.5 h-3 bg-gradient-to-b from-slate-100 to-slate-400 rounded-sm shadow-md border border-slate-500 pointer-events-none" />
+            <div className="absolute -top-1.5 right-6 w-3.5 h-3 bg-gradient-to-b from-slate-100 to-slate-400 rounded-sm shadow-md border border-slate-500 pointer-events-none" />
+            <div className="absolute -bottom-1.5 left-6 w-3.5 h-3 bg-gradient-to-b from-slate-100 to-slate-400 rounded-sm shadow-md border border-slate-500 pointer-events-none" />
+            <div className="absolute -bottom-1.5 right-6 w-3.5 h-3 bg-gradient-to-b from-slate-100 to-slate-400 rounded-sm shadow-md border border-slate-500 pointer-events-none" />
+            <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3.5 bg-gradient-to-r from-slate-100 to-slate-400 rounded-sm shadow-md border border-slate-500 pointer-events-none" />
+            <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3.5 bg-gradient-to-r from-slate-100 to-slate-400 rounded-sm shadow-md border border-slate-500 pointer-events-none" />
+
+            {/* Deep Drum Cylinder Interior / Batter Head */}
+            <div
+              className="relative w-full h-full rounded-[24px] flex flex-col items-center justify-center overflow-hidden"
+              style={{
+                background: isGlowing
+                  ? `radial-gradient(circle at 50% 50%, #334155 0%, #1e293b 50%, ${config.color} 90%, #020617 100%)`
+                  : 'radial-gradient(circle at 50% 40%, #1e293b 0%, #0f172a 65%, #020617 100%)',
+                boxShadow: 'inset 0 6px 18px rgba(0,0,0,0.8), inset 0 0 12px rgba(255,255,255,0.06)',
+              }}
+            >
+              {/* Outer Head Muffle Ring (REMO Powerstroke / EVANS EMAD風ダンパーリング) */}
+              <div className="absolute inset-2 rounded-[20px] border border-slate-600/30 pointer-events-none" />
+
+              {/* Falam Slam / EQ Beater Impact Patch (ビーター保護パッチ) */}
+              <div
+                className="relative w-14 h-14 rounded-full border-2 border-slate-600 flex items-center justify-center shadow-inner pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, #334155 0%, #0f172a 75%)',
+                  boxShadow: kickPulse ? `0 0 16px ${config.glowColor}` : 'none',
+                }}
+              >
+                <div className="w-9 h-9 rounded-full border border-slate-500/50 bg-slate-900 flex items-center justify-center">
+                  <span className="text-xs font-black text-slate-400">22"</span>
+                </div>
+              </div>
+
+              {/* Front Microphone Port Hole on bottom right */}
+              <div className="absolute right-3.5 bottom-2.5 w-7 h-7 rounded-full bg-slate-950 border-2 border-slate-700 shadow-inner flex items-center justify-center pointer-events-none">
+                <div className="w-5 h-5 rounded-full bg-black border border-slate-800" />
+              </div>
+            </div>
+
+            {/* REALISTIC 3D KICK PEDAL ASSEMBLY (手前に鎮座する本格フットペダル＆ビーター) */}
+            <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-16 h-10 flex flex-col items-center pointer-events-none z-30">
+              {/* Beater Shaft & White Felt Beater (打面に向かうビーター) */}
+              <div
+                className="flex flex-col items-center transition-transform duration-75"
+                style={{
+                  transform: kickPulse ? 'translateY(-6px) scaleY(0.92)' : 'translateY(0)',
+                }}
+              >
+                {/* Felt Beater Head */}
+                <div className="w-4 h-3 rounded bg-gradient-to-b from-white to-slate-200 border border-slate-400 shadow-md" />
+                {/* Black Beater Steel Rod */}
+                <div className="w-1 h-3.5 bg-slate-800 shadow" />
+              </div>
+
+              {/* Pedal Footboard (アルミ削り出し風フットボード＆ヒールプレート) */}
+              <div className="w-12 h-5 rounded-t-lg bg-gradient-to-t from-slate-400 via-slate-200 to-slate-300 border border-slate-500 shadow-xl flex items-center justify-around px-1">
+                <div className="w-0.5 h-3 bg-slate-600 rounded-full" />
+                <div className="w-0.5 h-3 bg-slate-600 rounded-full" />
+                <div className="w-0.5 h-3 bg-slate-600 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ) : isSnare ? (
+          /* --- 14" SNARE DRUM (DIE-CAST CHROME HOOP, COATED WHITE HEAD, MOONGEL, TENSION LUGS) --- */
+          <div
+            className="relative w-full h-full rounded-full transition-transform shadow-2xl flex items-center justify-center"
+            style={{
+              transform: 'rotateX(26deg)',
+              background: isGlowing ? config.color : '#475569',
+              boxShadow: isGlowing
+                ? `0 0 30px ${config.glowColor}, 0 12px 28px rgba(0,0,0,0.85)`
+                : '0 12px 28px rgba(0,0,0,0.85), inset 0 3px 6px rgba(255,255,255,0.7)',
+              padding: '6px', // Thick Die-cast Chrome Rim
+            }}
+          >
+            {/* 10 Chrome Tension Lugs around Hoop (ダイキャストリムの10本テンションボルト) */}
+            {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((deg) => (
+              <div
+                key={deg}
+                className="absolute w-2 h-2.5 bg-gradient-to-r from-slate-200 via-white to-slate-400 rounded-sm shadow border border-slate-500 pointer-events-none -z-10"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(-50%, -50%) rotate(${deg}deg) translate(0, -${padScale === 'huge' ? 46 : 42}px)`,
+                }}
+              />
+            ))}
+
+            {/* Heavy Die-cast Chrome Hoop Rim (重厚なクロームフープの金属光沢) */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                border: '4px solid #cbd5e1',
+                boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -2px 4px rgba(0,0,0,0.6)',
+              }}
+            />
+
+            {/* Visible Drum Shell Cylinder Depth at bottom (手前に見える美しいウッドシェル) */}
+            <div className="absolute -bottom-3 inset-x-3 h-4 bg-gradient-to-b from-amber-900 via-red-950 to-slate-950 rounded-b-full border-t border-slate-600 shadow-md pointer-events-none -z-20" />
+
+            {/* Coated White Batter Head (コーテッドホワイト打面のざらつきと陰影) */}
+            <div
+              className="relative w-full h-full rounded-full flex items-center justify-center overflow-hidden"
+              style={{
+                background: isGlowing
+                  ? `radial-gradient(circle at 45% 42%, #ffffff 0%, #f1f5f9 40%, ${config.color} 90%, #64748b 100%)`
+                  : 'radial-gradient(circle at 45% 42%, #ffffff 0%, #f8fafc 45%, #e2e8f0 75%, #cbd5e1 100%)',
+                boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.4), inset 0 -2px 6px rgba(0,0,0,0.2)',
+              }}
+            >
+              {/* Coated Texture Surface Grain */}
+              <div
+                className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#475569_1px,transparent_1px)]"
+                style={{ backgroundSize: '5px 5px' }}
+              />
+
+              {/* Overtone Control Ring / Remo CS Center Dot (打面中央のコントロールドット) */}
+              <div className="w-[36%] h-[36%] rounded-full border border-slate-300/80 bg-slate-100/40 shadow-inner flex items-center justify-center pointer-events-none">
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-300/60" />
+              </div>
+
+              {/* Iconic MoonGel Damper Pad (ドラマー御用達！ブルーのムーンジェルミュート) */}
+              <div className="absolute top-2 left-3 w-3 h-2 rounded bg-cyan-500/80 border border-cyan-300/90 shadow-sm pointer-events-none" />
+
+              {/* Snare Strainer Throw-off lever on right edge */}
+              <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-3.5 bg-gradient-to-r from-slate-200 to-slate-400 rounded-sm shadow pointer-events-none" />
+            </div>
+
+            {/* Snare Stand Basket Arms below */}
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3 h-4 bg-gradient-to-r from-slate-400 via-slate-200 to-slate-500 rounded-b shadow pointer-events-none -z-20" />
+          </div>
+        ) : (
+          /* --- TOM-TOMS & FLOOR TOM (CLEAR HEAD, PINSTRIPE, WOOD SHELL & LUGS) --- */
+          <div
+            className="relative w-full h-full rounded-full transition-transform shadow-2xl flex items-center justify-center"
+            style={{
+              transform: 'rotateX(26deg)',
+              background: isGlowing ? config.color : '#334155',
+              boxShadow: isGlowing
+                ? `0 0 25px ${config.glowColor}, 0 10px 24px rgba(0,0,0,0.8)`
+                : '0 10px 24px rgba(0,0,0,0.85), inset 0 2px 5px rgba(255,255,255,0.6)',
+              padding: '5px', // Triple Flanged Chrome Rim
+            }}
+          >
+            {/* Chrome Tension Lugs (テンションラグ金具) */}
+            {[0, 60, 120, 180, 240, 300].map((deg) => (
+              <div
+                key={deg}
+                className="absolute w-1.5 h-2 bg-gradient-to-r from-slate-200 via-white to-slate-400 rounded-sm shadow border border-slate-500 pointer-events-none -z-10"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(-50%, -50%) rotate(${deg}deg) translate(0, -${isFloorTom ? 42 : 36}px)`,
+                }}
+              />
+            ))}
+
+            {/* Triple Flanged Chrome Rim (クロームリム) */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                border: '3px solid #94a3b8',
+                boxShadow: 'inset 0 2px 3px rgba(255,255,255,0.7), inset 0 -2px 3px rgba(0,0,0,0.6)',
+              }}
+            />
+
+            {/* Cylinder Shell Depth at bottom (手前に見えるディープサファイア/メイプルシェル) */}
+            <div
+              className="absolute -bottom-3 inset-x-2 h-4 rounded-b-full border-t border-slate-600 shadow-md pointer-events-none -z-20"
+              style={{
+                background: 'linear-gradient(180deg, #1e3a8a 0%, #0f172a 60%, #020617 100%)',
+              }}
+            />
+
+            {/* Clear Drum Head with Remo Pinstripe Ring (ピンストライプ入りのクリアヘッド) */}
+            <div
+              className="relative w-full h-full rounded-full flex items-center justify-center overflow-hidden"
+              style={{
+                background: isGlowing
+                  ? `radial-gradient(circle at 45% 40%, #67e8f9 0%, #0284c7 45%, ${config.color} 85%, #0369a1 100%)`
+                  : 'radial-gradient(circle at 45% 40%, #334155 0%, #1e293b 50%, #0f172a 80%, #020617 100%)',
+                boxShadow: 'inset 0 5px 12px rgba(0,0,0,0.6), inset 0 -2px 6px rgba(0,0,0,0.4)',
+              }}
+            >
+              {/* Outer Black Pinstripe Dampening Ring (ピンストライプリング) */}
+              <div className="absolute inset-2 rounded-full border-2 border-black/50 pointer-events-none" />
+
+              {/* Head Center Clear Reflection */}
+              <div className="w-[32%] h-[32%] rounded-full border border-slate-500/30 bg-white/5 pointer-events-none" />
+            </div>
+
+            {/* Tom Holder L-Rod or Floor Tom Legs */}
+            {isFloorTom ? (
               <>
-                <div className="absolute -left-1 top-2 w-1.5 h-4 bg-slate-300 rounded pointer-events-none" />
-                <div className="absolute -right-1 top-2 w-1.5 h-4 bg-slate-300 rounded pointer-events-none" />
+                {/* 3 Chrome Floor Tom Legs (フロアタムの3本レッグ) */}
+                <div className="absolute -left-2 top-2 w-1.5 h-6 bg-gradient-to-r from-slate-400 via-white to-slate-500 rounded shadow pointer-events-none -z-20 -rotate-12" />
+                <div className="absolute -right-2 top-2 w-1.5 h-6 bg-gradient-to-r from-slate-400 via-white to-slate-500 rounded shadow pointer-events-none -z-20 rotate-12" />
               </>
+            ) : (
+              /* Mounted Tom Omni-Ball L-Rod Bracket */
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-2 h-4 bg-gradient-to-r from-slate-400 via-white to-slate-500 rounded-b shadow pointer-events-none -z-20" />
             )}
           </div>
         )}
@@ -402,7 +594,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {/* PAD LABEL & SHORT KEY HINT */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
           <span
-            className="text-[11px] sm:text-xs font-black tracking-wider uppercase drop-shadow-md text-center leading-tight"
+            className="text-[11px] sm:text-xs font-black tracking-wider uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] text-center leading-tight"
             style={{
               color: isCymbal
                 ? '#451a03'
@@ -422,16 +614,16 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           </span>
           {drumLayout === 'compact' && (
             <span
-              className="text-[8px] sm:text-[9px] font-black uppercase opacity-75 drop-shadow-sm leading-none"
+              className="text-[8px] sm:text-[9px] font-black uppercase opacity-85 drop-shadow-sm leading-none mt-0.5"
               style={{
-                color: isCymbal ? '#78350f' : isSnare ? '#475569' : '#94a3b8',
+                color: isCymbal ? '#78350f' : isSnare ? '#334155' : '#94a3b8',
               }}
             >
               {config.shortName}
             </span>
           )}
           {showKeyHints && (
-            <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-black/60 text-slate-100 border border-white/20 mt-0.5">
+            <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-black/75 text-slate-100 border border-white/20 mt-0.5 shadow">
               {config.keyLabel.split(' / ')[0]}
             </span>
           )}
@@ -439,7 +631,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
 
         {/* LOCKED BADGE (for RPG Training curriculum) */}
         {!isUnlocked && (
-          <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center bg-black/70 z-30 pointer-events-none">
+          <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center bg-black/75 z-30 pointer-events-none">
             <Lock className="w-4 h-4 text-slate-400 mb-0.5" />
             <span className="text-[9px] font-bold text-slate-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-slate-700">
               未解放
@@ -460,21 +652,50 @@ export const DrumSet: React.FC<DrumSetProps> = ({
     >
       {/* 3D DRUM STAGE CARPET & METALLIC LIGHTING */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden"
+        className="absolute inset-0 bg-gradient-to-b from-slate-950 via-[#0d121f] to-slate-950 rounded-3xl border-2 border-slate-800/80 shadow-2xl overflow-hidden"
         style={{
-          transform: 'rotateX(12deg)',
+          transform: 'rotateX(14deg)',
           transformOrigin: 'bottom center',
         }}
       >
-        {/* Drum Rug Texture */}
+        {/* Heavy-Duty Non-Slip Studio Drum Rug (プロ用ドラムマットのテクスチャ) */}
         <div
-          className="absolute inset-0 opacity-10 bg-[radial-gradient(#94a3b8_1.5px,transparent_1.5px)]"
-          style={{ backgroundSize: '16px 16px' }}
+          className="absolute inset-2 rounded-2xl border border-amber-900/30 opacity-30 bg-[radial-gradient(#f59e0b_1px,transparent_1px),radial-gradient(#94a3b8_1px,transparent_1px)]"
+          style={{
+            backgroundSize: '20px 20px, 10px 10px',
+            backgroundPosition: '0 0, 5px 5px',
+          }}
         />
-        {/* Stage Spotlights */}
-        <div className="absolute -top-8 left-1/4 w-36 h-36 bg-pink-500/15 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -top-8 right-1/4 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Studio Lighting Overheads (ドラマーを照らす上部スポットライト) */}
+        <div className="absolute -top-12 left-1/4 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-12 right-1/4 w-44 h-44 bg-pink-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-64 h-28 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        {/* CHROME HARDWARE STANDS ON THE RUG (マット上に広がるスタンドの三脚・脚部) */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-40 -z-5"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Hi-Hat Stand Tripod Base (Left) */}
+          <line x1="22%" y1="65%" x2="16%" y2="82%" stroke="#94a3b8" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="22%" y1="65%" x2="28%" y2="82%" stroke="#64748b" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="22%" y1="65%" x2="22%" y2="52%" stroke="#cbd5e1" strokeWidth="4.5" strokeLinecap="round" />
+          {/* Snare Basket Stand Center */}
+          <line x1="50%" y1="68%" x2="43%" y2="86%" stroke="#94a3b8" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="50%" y1="68%" x2="57%" y2="86%" stroke="#64748b" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="50%" y1="68%" x2="50%" y2="56%" stroke="#cbd5e1" strokeWidth="5" strokeLinecap="round" />
+          {/* Floor Tom / Ride Stand (Right) */}
+          <line x1="78%" y1="65%" x2="72%" y2="82%" stroke="#64748b" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="78%" y1="65%" x2="84%" y2="82%" stroke="#94a3b8" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="78%" y1="65%" x2="78%" y2="52%" stroke="#cbd5e1" strokeWidth="4.5" strokeLinecap="round" />
+          {/* Double Tom Holder Post emerging from Kick */}
+          <line x1="50%" y1="36%" x2="50%" y2="24%" stroke="#e2e8f0" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="50%" cy="24%" r="4" fill="#94a3b8" stroke="#334155" strokeWidth="1.5" />
+        </svg>
+
+        {/* Stage Perspective Depth Lines */}
+        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
       </div>
 
       {/* HIT SPARKLE PARTICLES OVERLAY */}
