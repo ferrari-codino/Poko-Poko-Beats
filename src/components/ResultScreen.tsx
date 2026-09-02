@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, MascotId, UserProfile, CourseState } from '../types';
+import { SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, MascotId, UserProfile, CourseState, RPGCoach } from '../types';
 import { MascotCharacter } from './MascotCharacter';
 import confetti from 'canvas-confetti';
-import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft, FastForward, CheckCircle2, Flame } from 'lucide-react';
+import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft, FastForward, CheckCircle2, Flame, Award, Lightbulb, ChevronRight } from 'lucide-react';
 import { saveLocalScore, saveLocalUser } from '../utils/storageFallback';
+import { getRPGLevelConfig, recordLevelClear, getUnlockedPartsForLevel, getTierForLevel } from '../data/rpgCurriculum';
+import { RPG_COACHES } from '../data/rpgCoaches';
+import { DRUM_PARTS } from '../data/drumConfig';
 
 interface ResultScreenProps {
   song: SongData;
@@ -13,6 +16,8 @@ interface ResultScreenProps {
   settings: PlayerSettings;
   currentUser?: UserProfile | null;
   courseState?: CourseState | null;
+  rpgLevel?: number | null;
+  userLevel?: number;
   onUpdateUserBests?: (user: UserProfile) => void;
   onPlayAgain: () => void;
   onSelectSong: () => void;
@@ -20,6 +25,7 @@ interface ResultScreenProps {
   onOpenMyPage: () => void;
   onNextCourseSong?: () => void;
   onExitCourse?: () => void;
+  onNextRPGLevel?: (nextLvl: number) => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
@@ -30,6 +36,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   settings,
   currentUser,
   courseState,
+  rpgLevel,
+  userLevel,
   onUpdateUserBests,
   onPlayAgain,
   onSelectSong,
@@ -37,9 +45,22 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onOpenMyPage,
   onNextCourseSong,
   onExitCourse,
+  onNextRPGLevel,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitResult, setSubmitResult] = useState<{ rankPosition?: number; isTop30?: boolean; isNewBest?: boolean } | null>(null);
+
+  // RPG Level configuration & clearance evaluation
+  const rpgConfig = rpgLevel ? getRPGLevelConfig(rpgLevel) : null;
+  const currentTier = rpgLevel ? getTierForLevel(rpgLevel) : 'beginner';
+  const coach: RPGCoach = RPG_COACHES[currentTier];
+  const isRPGCleared = rpgConfig ? scoreState.score >= rpgConfig.clearMinScore || scoreState.accuracy >= 65 : false;
+
+  useEffect(() => {
+    if (rpgLevel && isRPGCleared) {
+      recordLevelClear(rpgLevel, scoreState.score, rankInfo.rank, scoreState.accuracy);
+    }
+  }, [rpgLevel, isRPGCleared]);
 
   // Auto-advance countdown for course mode
   const [courseCountdown, setCourseCountdown] = useState<number>(4);
@@ -250,9 +271,23 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
       {/* HEADER & MASCOT CHEER */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-500/40 text-xs font-black text-pink-300">
-            <Sparkles className="w-3.5 h-3.5" />
-            ステージクリア！🎉
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-xs font-black text-amber-300 shadow-sm">
+              <span>👑</span>
+              <span>USER Lv.{userLevel ?? (rpgLevel || 1)}</span>
+            </span>
+
+            {rpgLevel ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-500/20 border border-pink-400/50 text-xs font-black text-pink-300 shadow-sm">
+                <span>🎯</span>
+                <span>GAME Lv.{rpgLevel}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-xs font-black text-cyan-300">
+                <span>🎮</span>
+                <span>FREE PLAY</span>
+              </span>
+            )}
           </div>
 
           {submitResult?.isNewBest && (
@@ -368,6 +403,79 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* DEDICATED COACH LESSON REVIEW CARD (専属動物コーチのレッスン講評＆技術的アドバイス) */}
+      {rpgConfig && (
+        <div className="bg-slate-900/95 border-2 border-pink-500/40 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden mb-3">
+          {/* Header with Coach info */}
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+            <div
+              className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${coach.avatarBg} border flex items-center justify-center text-2xl shadow-md flex-shrink-0`}
+            >
+              {coach.emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-white" style={{ color: coach.color }}>
+                  {coach.name} のレッスン講評
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  Lv.{rpgLevel}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">課題: {rpgConfig.title}</p>
+            </div>
+          </div>
+
+          {/* 1. やさしいコメント (Kind praise) */}
+          <div className="mt-3 p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <span className="text-base flex-shrink-0">💬</span>
+            <div>
+              <div className="text-[10px] font-bold text-pink-300 mb-0.5">やさしい励ましコメント:</div>
+              <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                {rpgConfig.coachAdvice.praise}
+              </p>
+            </div>
+          </div>
+
+          {/* 2. ドラムに関する技術的コメント（ミュージシャン視点） */}
+          <div className="mt-2.5 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+            <span className="text-base flex-shrink-0">🎯</span>
+            <div>
+              <div className="text-[10px] font-bold text-amber-300 mb-0.5">技術的なドラムアドバイス:</div>
+              <p className="text-xs text-amber-100/90 leading-relaxed">
+                {rpgConfig.coachAdvice.technicalTip}
+              </p>
+            </div>
+          </div>
+
+          {/* Level Clearance Status & Promotion Fanfare */}
+          <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
+            <div>
+              {isRPGCleared ? (
+                <div className="flex items-center gap-1.5 text-emerald-400 font-black text-xs sm:text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>レッスン課題クリア！ 昇格達成！</span>
+                </div>
+              ) : (
+                <div className="text-xs text-amber-300 font-bold">
+                  惜しい！あと少しでクリア！再挑戦してみよう！
+                </div>
+              )}
+            </div>
+
+            {isRPGCleared && onNextRPGLevel && (
+              <button
+                onClick={() => onNextRPGLevel((rpgLevel || 1) + 1)}
+                className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md hover:opacity-90 active:scale-95 transition"
+              >
+                <span>次のレベル（Lv.{(rpgLevel || 1) + 1}）へ！</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* COURSE MODE PROGRESS OR FINISHED BANNER */}
       {isCourseMode && courseState && (

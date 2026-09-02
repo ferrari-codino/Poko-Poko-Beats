@@ -1,6 +1,6 @@
 {
   "name": "Poko-Poko Beats",
-  "description": "スマホで遊ぶドラム系リズムゲーム。上から見下ろすドラムセットを叩いてハイスコアを目指そう！ランキング機能・難易度選択・リアルタイム音源合成完備。",
+  "description": "斜めアングルのリアルな3D立体ドラムセットと本格ドラム譜レーンで遊ぶドラムリズムゲーム。初級・中級・上級のRPG育成＆ドラムトレーニング、専属動物コーチによる技術レッスン講評、リアルタイム音源合成完備。",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

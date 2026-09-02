@@ -37,6 +37,8 @@ interface SongSelectScreenProps {
   onOpenAdmin?: () => void;
   onOpenCourseModal: () => void;
   onStartRandomGame?: () => void;
+  onOpenRPGModal?: () => void;
+  rpgLevel?: number;
 }
 
 export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
@@ -56,6 +58,8 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
   onOpenAdmin,
   onOpenCourseModal,
   onStartRandomGame,
+  onOpenRPGModal,
+  rpgLevel = 1,
 }) => {
   const currentDiffInfo = selectedSong.difficulties[selectedDifficulty];
   const mascot = MASCOTS[currentUser?.avatarId || 'pokota'] || MASCOTS.pokota;
@@ -140,8 +144,9 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               <h1 className="text-base sm:text-lg font-black text-white leading-tight">
                 Poko-Poko Beats
               </h1>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-300 font-bold border border-pink-500/40">
-                100 SONGS
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 font-black border border-amber-400/50 shadow-sm">
+                <span>👑</span>
+                <span>USER Lv.{rpgLevel || 1}</span>
               </span>
             </div>
             <span className="text-[10px] text-amber-300 font-bold">
@@ -216,6 +221,10 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               <span className="text-xs font-black text-white group-hover:text-pink-300 transition-colors">
                 {currentUser?.nickname || 'ゲストドラマー'}
               </span>
+              <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.2 rounded-md bg-amber-500/25 text-amber-300 font-black border border-amber-400/50 shadow-sm">
+                <span>👑</span>
+                <span>USER Lv.{rpgLevel || 1}</span>
+              </span>
               <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-slate-900/80 text-amber-300 font-bold">
                 マイページ ▷
               </span>
@@ -234,6 +243,40 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
           切替
         </button>
       </div>
+
+      {/* RPG TRAINING & COACH PROMOTION BANNER */}
+      {onOpenRPGModal && (
+        <button
+          id="open-rpg-course-btn"
+          type="button"
+          onClick={onOpenRPGModal}
+          className="w-full mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-pink-500/20 via-amber-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 border-2 border-pink-400/50 shadow-md flex items-center justify-between text-left transition-all active:scale-98 group"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-pink-500 flex items-center justify-center text-xl shadow flex-shrink-0">
+              🎓
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                  ドラムRPG育成 ＆ レッスンコース
+                </span>
+                <span className="text-[10px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950">
+                  PLAYER Lv.{rpgLevel}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-300">
+                初級(Lv.1〜)・中級(Lv.21〜)・上級(Lv.61〜) 専属動物コーチの講評つき！
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-xs font-bold text-pink-300 bg-pink-500/20 px-2 py-1 rounded-xl border border-pink-500/40 shrink-0">
+            <span>レッスン</span>
+            <span>▷</span>
+          </div>
+        </button>
+      )}
 
       {/* MODE BUTTONS: Course Mode, Random, Free Play, Ranking */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2">

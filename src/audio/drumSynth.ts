@@ -36,6 +36,21 @@ class DrumSynthEngine {
     if (this.drumGain) this.drumGain.gain.value = Math.max(0, Math.min(1, drum));
   }
 
+  // Connects an audio node through a stereo panner into drumGain
+  private connectWithPan(sourceGain: GainNode, panVal: number) {
+    if (!this.ctx || !this.drumGain) return;
+    try {
+      if (this.ctx.createStereoPanner) {
+        const panner = this.ctx.createStereoPanner();
+        panner.pan.value = Math.max(-1, Math.min(1, panVal));
+        sourceGain.connect(panner);
+        panner.connect(this.drumGain);
+        return;
+      }
+    } catch {}
+    sourceGain.connect(this.drumGain);
+  }
+
   private generateNoiseBuffer() {
     if (!this.ctx) return;
     const bufferSize = this.ctx.sampleRate * 2; // 2 seconds of noise

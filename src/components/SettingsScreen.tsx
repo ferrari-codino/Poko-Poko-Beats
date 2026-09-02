@@ -54,9 +54,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   const layoutOptions: { id: DrumLayoutType; title: string; desc: string; icon: string }[] = [
-    { id: 'standard', title: '右利き (標準)', desc: 'ハイハットが左、フロアタムが右の王道レイアウト', icon: '🥁' },
+    { id: 'standard', title: '右利き (標準8パッド)', desc: 'ハイハットが左、フロアタムが右の王道ドラムセット配置', icon: '🥁' },
+    { id: 'compact', title: 'かんたん4パッド (幼児・キッズ向け)', desc: '実際のドラムセットと同じ配置！左上クラッシュ・左ハット・中央スネア・下キックの特大パッド', icon: '⭐' },
     { id: 'leftHanded', title: '左利き (ミラー反転)', desc: '左利きの方に最適！ハイハットが右、フロアタムが左', icon: '🖐️' },
-    { id: 'compact', title: 'かんたん4パッド (キッズ向け)', desc: 'キック・スネア・ハット・クラッシュを特大表示！', icon: '⭐' },
     { id: 'wide', title: 'ワイド配置', desc: 'タム3つが上部に綺麗に並んだ広々レイアウト', icon: '⚡' },
   ];
 

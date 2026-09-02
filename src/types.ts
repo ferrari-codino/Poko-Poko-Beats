@@ -51,8 +51,9 @@ export type PadScale = 'normal' | 'large' | 'huge';
 export interface RhythmNote {
   id: string;
   part: DrumPartId;
+  type?: string;
   time: number; // time in seconds from song start
-  beat: number; // exact beat number (e.g. 1.0, 1.5, 2.0)
+  beat?: number; // exact beat number (e.g. 1.0, 1.5, 2.0)
   hit?: boolean;
   missed?: boolean;
   judgment?: JudgmentType;
@@ -159,6 +160,53 @@ export interface ScoreState {
   isFever: boolean;
 }
 
+export type RPGDifficultyTier = 'beginner' | 'intermediate' | 'advanced';
+
+export interface RPGLevelConfig {
+  level: number; // 1 to 100
+  tier: RPGDifficultyTier;
+  title: string;
+  focusLesson: string;
+  unlockedParts: DrumPartId[];
+  targetSongId: string;
+  difficulty: Difficulty;
+  clearMinScore: number;
+  bpm: number; // Level-specific BPM (Level 1: 60 BPM, progressively increasing)
+  previewSeconds: number; // Light approach countdown window (Level 1: 1.5s, progressively tightening)
+  coachAdvice: {
+    praise: string;
+    technicalTip: string;
+  };
+}
+
+export interface RPGProgress {
+  currentLevel: number; // 1 to 100 (player's current standing)
+  highestClearedLevel: number;
+  clearedLevels: Record<number, { score: number; rank: string; accuracy: number; timestamp: number }>;
+  activeTier: RPGDifficultyTier;
+}
+
+export interface RPGCoach {
+  id: string;
+  tier: RPGDifficultyTier;
+  name: string;
+  title: string;
+  animal: string;
+  emoji: string;
+  avatarBg: string;
+  color: string;
+  instrument: string;
+  catchphrase: string;
+  cheerQuotes: {
+    start: string[];
+    onBeat: string[];
+    combo: string[];
+    fever: string[];
+    miss: string[];
+    finish: string[];
+  };
+}
+
 export interface UserPersonalBest {
   score: number;
   rank: string;
@@ -176,6 +224,7 @@ export interface UserProfile {
   totalPlays: number;
   totalScore: number;
   starsCount: number;
+  rpgProgress?: RPGProgress;
   personalBests: Record<string, Record<string, UserPersonalBest>>; // songId -> difficulty -> record
   registeredAt: number;
   lastLoginAt: number;

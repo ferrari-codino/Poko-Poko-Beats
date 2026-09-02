@@ -6,6 +6,7 @@ import { Search } from 'lucide-react';
 
 interface MyPageScreenProps {
   user: UserProfile;
+  userLevel?: number;
   onBackToMenu: () => void;
   onOpenSwitchUser: () => void;
   onSelectSongToPlay: (song: SongData, difficulty: Difficulty) => void;
@@ -13,6 +14,7 @@ interface MyPageScreenProps {
 
 export const MyPageScreen: React.FC<MyPageScreenProps> = ({
   user,
+  userLevel,
   onBackToMenu,
   onOpenSwitchUser,
   onSelectSongToPlay,
@@ -97,6 +99,10 @@ export const MyPageScreen: React.FC<MyPageScreenProps> = ({
               <h2 className="text-xl sm:text-2xl font-black text-white">
                 {user.nickname}
               </h2>
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/25 to-amber-600/25 text-amber-300 font-black border border-amber-400/60 shadow-sm">
+                <span>👑</span>
+                <span>USER Lv.{userLevel ?? 1}</span>
+              </span>
               <span className={`text-xs px-2.5 py-0.5 rounded-full border ${gradeBadgeColor}`}>
                 {drummerGrade}
               </span>

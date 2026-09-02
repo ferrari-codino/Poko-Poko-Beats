@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DrumPartId, DrumLayoutType, PadScale } from '../types';
 import { DRUM_PARTS } from '../data/drumConfig';
 import { drumSynth } from '../audio/drumSynth';
+import { Lock } from 'lucide-react';
 
 interface DrumSetProps {
   onDrumHit: (part: DrumPartId, hitTimestamp: number) => void;
@@ -11,6 +12,8 @@ interface DrumSetProps {
   isFreePlay?: boolean;
   drumLayout?: DrumLayoutType;
   padScale?: PadScale;
+  unlockedParts?: DrumPartId[];
+  prepareTargetPart?: DrumPartId | null;
 }
 
 interface Particle {
@@ -34,15 +37,25 @@ export const DrumSet: React.FC<DrumSetProps> = ({
   isFreePlay = false,
   drumLayout = 'standard',
   padScale = 'normal',
+  unlockedParts,
+  prepareTargetPart,
 }) => {
   const [pressedParts, setPressedParts] = useState<Record<string, boolean>>({});
-  // Timestamp when each part was last hit, used for decaying spring wobble animation
-  const [lastHitTimes, setLastHitTimes] = useState<Record<string, number>>({});
+  const [wobbleRotations, setWobbleRotations] = useState<Record<string, number>>({});
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [stageVibrate, setStageVibrate] = useState(false);
+  const [kickPulse, setKickPulse] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Trigger cute star and sparkle particle effect when drum is hit
+  // Check if a part is unlocked in current RPG/training session
+  const isPartUnlocked = useCallback(
+    (part: DrumPartId) => {
+      if (!unlockedParts) return true;
+      return unlockedParts.includes(part);
+    },
+    [unlockedParts]
+  );
+
+  // Spawn visual sparkle particles when drum is struck
   const spawnHitParticles = useCallback((part: DrumPartId, clientX?: number, clientY?: number) => {
     const config = DRUM_PARTS[part];
     let originX = window.innerWidth / 2;
@@ -54,11 +67,11 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       originY = clientY - rect.top;
     }
 
-    const cuteEmojis = ['⭐', '✨', '🎵', '💫', '💖'];
+    const cuteEmojis = ['⭐', '✨', '⚡', '💫', '🔥'];
     const newParticles: Particle[] = [];
     for (let i = 0; i < 7; i++) {
       const angle = (Math.PI * 2 * i) / 7 + (Math.random() - 0.5);
-      const speed = 2.5 + Math.random() * 4.5;
+      const speed = 3.0 + Math.random() * 4.5;
       const isEmoji = i === 0;
       newParticles.push({
         id: Date.now() + Math.random() + i,
@@ -67,17 +80,17 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         color: config.color,
         emoji: isEmoji ? cuteEmojis[Math.floor(Math.random() * cuteEmojis.length)] : undefined,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.2,
-        size: isEmoji ? 16 : 4 + Math.random() * 5,
+        vy: Math.sin(angle) * speed - 1.5,
+        size: isEmoji ? 18 : 5 + Math.random() * 6,
         alpha: 1,
         rotation: Math.random() * 360,
       });
     }
 
-    setParticles((prev) => [...prev.slice(-20), ...newParticles]);
+    setParticles((prev) => [...prev.slice(-25), ...newParticles]);
   }, []);
 
-  // Update particles animation loop
+  // Particle physics update loop
   useEffect(() => {
     if (particles.length === 0) return;
     const interval = setInterval(() => {
@@ -87,9 +100,9 @@ export const DrumSet: React.FC<DrumSetProps> = ({
             ...p,
             x: p.x + p.vx,
             y: p.y + p.vy,
-            vy: p.vy + 0.15, // gravity
+            vy: p.vy + 0.16, // gravity
             rotation: p.rotation + 4,
-            alpha: p.alpha - 0.07,
+            alpha: p.alpha - 0.065,
             size: p.size * 0.96,
           }))
           .filter((p) => p.alpha > 0.05)
@@ -98,36 +111,45 @@ export const DrumSet: React.FC<DrumSetProps> = ({
     return () => clearInterval(interval);
   }, [particles.length]);
 
+  // Handle striking a drum pad
   const handleHit = useCallback(
     (part: DrumPartId, e?: React.PointerEvent | React.TouchEvent | React.MouseEvent) => {
-      // Haptic feedback for mobile devices
+      // If part is locked in training curriculum, do not trigger
+      if (!isPartUnlocked(part)) {
+        return;
+      }
+
+      // Haptic feedback
       if (hapticsEnabled && typeof navigator !== 'undefined' && navigator.vibrate) {
         try {
-          navigator.vibrate(22);
+          navigator.vibrate(24);
         } catch {}
       }
 
-      // Play drum sound via Web Audio synth
+      // Play synthesized acoustic sound
       drumSynth.playDrum(part);
 
       const now = performance.now();
 
-      // Trigger physical wobble & bounce
+      // Trigger realistic physical wobble for cymbals or head depression for drums
       setPressedParts((prev) => ({ ...prev, [part]: true }));
-      setLastHitTimes((prev) => ({ ...prev, [part]: now }));
+      const wobbleDeg = (Math.random() > 0.5 ? 1 : -1) * (10 + Math.random() * 8);
+      setWobbleRotations((prev) => ({ ...prev, [part]: wobbleDeg }));
 
-      // Subtle stage shake
-      setStageVibrate(true);
-      setTimeout(() => setStageVibrate(false), 120);
+      if (part === 'kick') {
+        setKickPulse(true);
+        setTimeout(() => setKickPulse(false), 140);
+      }
 
       setTimeout(() => {
         setPressedParts((prev) => ({ ...prev, [part]: false }));
-      }, 140);
+        setWobbleRotations((prev) => ({ ...prev, [part]: 0 }));
+      }, 160);
 
       // Notify parent game loop
       onDrumHit(part, now);
 
-      // Spawn visual ripple particles
+      // Particle sparkles
       let cx: number | undefined;
       let cy: number | undefined;
       if (e && 'clientX' in e && e.clientX) {
@@ -136,7 +158,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       }
       spawnHitParticles(part, cx, cy);
     },
-    [hapticsEnabled, onDrumHit, spawnHitParticles]
+    [hapticsEnabled, onDrumHit, isPartUnlocked, spawnHitParticles]
   );
 
   // Keyboard controls listener
@@ -159,178 +181,271 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       K: 'hihatOpen',
       t: 'tomHigh',
       T: 'tomHigh',
-      e: 'tomHigh',
-      E: 'tomHigh',
-      g: 'tomLow',
-      G: 'tomLow',
-      r: 'tomLow',
-      R: 'tomLow',
+      y: 'tomLow',
+      Y: 'tomLow',
       f: 'tomFloor',
       F: 'tomFloor',
-      v: 'tomFloor',
-      V: 'tomFloor',
+      g: 'tomFloor',
+      G: 'tomFloor',
       c: 'crash',
       C: 'crash',
-      w: 'crash',
-      W: 'crash',
-      y: 'ride',
-      Y: 'ride',
-      u: 'ride',
-      U: 'ride',
+      r: 'ride',
+      R: 'ride',
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.repeat) return;
+      let part = keyMap[ev.key];
+      // In compact (toddler 4-pad) mode, redirect toms to snare, ride to crash, open-hat to closed-hat
+      if (drumLayout === 'compact' && part) {
+        if (part === 'tomHigh' || part === 'tomLow' || part === 'tomFloor') part = 'snare';
+        if (part === 'ride') part = 'crash';
+        if (part === 'hihatOpen') part = 'hihatClosed';
       }
-      const part = keyMap[e.key];
-      if (part && !pressedParts[part]) {
-        e.preventDefault();
+      if (part) {
         handleHit(part);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleHit, pressedParts]);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleHit]);
 
-  // Scale multiplier for pad sizes
-  const scaleMultiplier = padScale === 'huge' ? 1.25 : padScale === 'large' ? 1.12 : 1.0;
-
-  // Helper to render individual drum component with physics wobble & spring bounce
-  const renderDrumPad = (
+  // Helper to render 3D-angled drum or cymbal pad
+  const render3DPad = (
     part: DrumPartId,
-    customClass: string,
-    widthClass: string,
-    heightClass: string,
-    isCymbal: boolean = false
+    customClass: string = '',
+    customStyle?: React.CSSProperties
   ) => {
     const config = DRUM_PARTS[part];
+    const glowInfo = activeGlowingParts[part] || { glowIntensity: 0, approachProgress: 0 };
     const isPressed = !!pressedParts[part];
-    const glowInfo = activeGlowingParts[part];
-    const isGlowing = glowInfo && glowInfo.glowIntensity > 0;
-    const approach = glowInfo?.approachProgress || 0;
-    const hitTime = lastHitTimes[part] || 0;
-    const isWobbling = performance.now() - hitTime < 280;
+    const wobble = wobbleRotations[part] || 0;
+    const isUnlocked = isPartUnlocked(part);
+    const isCymbal = part === 'crash' || part === 'ride' || part === 'hihatClosed' || part === 'hihatOpen';
+    const isKick = part === 'kick';
+    const isSnare = part === 'snare';
+    const isFloorTom = part === 'tomFloor';
+    const isTom = part === 'tomHigh' || part === 'tomLow';
 
-    // Dynamic wobble transform calculation
-    let dynamicTransform = `scale(${scaleMultiplier})`;
-    if (isPressed) {
-      if (isCymbal) {
-        dynamicTransform = `scale(${scaleMultiplier * 0.94}) rotate(${part === 'crash' ? '-14deg' : '14deg'}) translateY(3px)`;
-      } else {
-        dynamicTransform = `scale(${scaleMultiplier * 0.90}, ${scaleMultiplier * 1.08}) translateY(4px)`;
-      }
-    } else if (isWobbling) {
-      if (isCymbal) {
-        dynamicTransform = `scale(${scaleMultiplier * 1.02}) rotate(${part === 'crash' ? '6deg' : '-6deg'})`;
-      } else {
-        dynamicTransform = `scale(${scaleMultiplier * 1.05}, ${scaleMultiplier * 0.96}) translateY(-2px)`;
-      }
-    }
+    const approach = glowInfo.approachProgress;
+    const isGlowing = glowInfo.glowIntensity > 0.05;
+    const isPrepareActive = (approach > 0 && approach < 1) || prepareTargetPart === part;
+
+    // Pad scale adjustment
+    const baseScale = padScale === 'huge' ? 1.12 : padScale === 'large' ? 1.06 : 1.0;
+    const compactScaleMultiplier = drumLayout === 'compact' ? 1.08 : 1.0;
+    const scaleFactor = baseScale * compactScaleMultiplier;
 
     return (
       <div
-        id={`drum-pad-${part}`}
         key={part}
+        id={`drum-pad-${part}`}
         onPointerDown={(e) => {
           e.preventDefault();
           handleHit(part, e);
         }}
-        className={`relative select-none cursor-pointer flex flex-col items-center justify-center rounded-full transition-transform duration-75 ease-out shadow-lg ${customClass} ${widthClass} ${heightClass}`}
+        className={`group relative flex items-center justify-center cursor-pointer select-none touch-none transition-all duration-75 ${
+          !isUnlocked ? 'opacity-35 grayscale pointer-events-none' : ''
+        } ${customClass}`}
         style={{
-          touchAction: 'none',
-          WebkitTapHighlightColor: 'transparent',
-          transform: dynamicTransform,
-          boxShadow: isGlowing
-            ? `0 0 28px 10px ${config.glowColor}, inset 0 0 16px ${config.glowColor}`
-            : isPressed
-            ? `0 0 22px 6px ${config.glowColor}`
-            : isCymbal
-            ? '0 6px 14px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2)'
-            : '0 8px 18px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.15)',
+          transform: `scale(${isPressed ? scaleFactor * 0.94 : scaleFactor}) rotate(${wobble}deg)`,
+          transformOrigin: isCymbal ? 'center' : 'bottom center',
+          ...customStyle,
         }}
       >
-        {/* Approaching timing target ring */}
-        {approach > 0 && approach < 1 && (
+        {/* READ-AHEAD "PREPARE" COUNTDOWN RING (先読みガイドオーラ) */}
+        {isUnlocked && isPrepareActive && approach > 0 && approach < 1 && (
           <div
-            className="absolute rounded-full pointer-events-none transition-all"
+            className="absolute rounded-full pointer-events-none transition-all duration-75"
             style={{
-              border: `3.5px solid ${config.color}`,
-              width: `${100 + (1 - approach) * 125}%`,
-              height: `${100 + (1 - approach) * 125}%`,
-              opacity: Math.min(1, approach * 1.6),
-              boxShadow: `0 0 12px ${config.glowColor}`,
+              border: `3px solid ${config.color}`,
+              width: `${100 + (1 - approach) * 110}%`,
+              height: `${100 + (1 - approach) * 110}%`,
+              opacity: Math.min(1, approach * 1.8),
+              boxShadow: `0 0 16px ${config.glowColor}, inset 0 0 8px ${config.glowColor}`,
             }}
-          />
+          >
+            {/* Small PREPARE tag over drum pad */}
+            <span
+              className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-mono tracking-tighter whitespace-nowrap shadow"
+            >
+              PREPARE!
+            </span>
+          </div>
         )}
 
-        {/* Glow halo when beat hits */}
-        {isGlowing && (
+        {/* HIT GLOW BURST HALO */}
+        {isGlowing && isUnlocked && (
           <div
-            className="absolute inset-0 rounded-full animate-ping pointer-events-none"
+            className="absolute inset-[-8px] rounded-full animate-ping pointer-events-none"
             style={{
               backgroundColor: config.glowColor,
-              opacity: glowInfo.glowIntensity * 0.7,
+              opacity: glowInfo.glowIntensity * 0.75,
             }}
           />
         )}
 
-        {/* Cymbal / Drum Skin Outer Rim */}
-        <div
-          className={`absolute inset-0 rounded-full border-2 transition-colors duration-100 ${
-            isCymbal ? 'border-amber-500/60' : 'border-slate-600'
-          }`}
-          style={{
-            borderColor: isGlowing ? config.color : undefined,
-            background: isCymbal
-              ? isGlowing
-                ? `radial-gradient(circle, ${config.bgActiveColor} 0%, #b45309 55%, #78350f 100%)`
-                : 'radial-gradient(circle, #fef08a 0%, #f59e0b 45%, #b45309 85%, #78350f 100%)'
-              : isGlowing
-              ? `radial-gradient(circle, #1e293b 0%, ${config.borderColor} 70%, ${config.color} 100%)`
-              : 'radial-gradient(circle, #334155 0%, #1e293b 70%, #0f172a 100%)',
-          }}
-        />
-
-        {/* Center Bell for Cymbals / Head Rim for Drums */}
+        {/* 3D CYLINDER SHELL DEPTH & HARDWARE */}
+        {/* Render realistic 3D angled Drum / Cymbal Body */}
         {isCymbal ? (
-          <div className="absolute w-1/3 h-1/3 rounded-full bg-amber-200 border border-amber-900/60 shadow-inner flex items-center justify-center pointer-events-none">
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-950" />
-          </div>
-        ) : (
+          // REALISTIC HAMMERED BRONZE CYMBAL (斜めに傾いたブームシンバル)
           <div
-            className="absolute inset-2 rounded-full border border-slate-500/40 flex items-center justify-center pointer-events-none"
+            className="relative w-full h-full rounded-full flex items-center justify-center border-2 transition-transform shadow-2xl"
             style={{
-              borderColor: isGlowing ? config.color : undefined,
-              boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.4)',
+              borderColor: isGlowing ? config.color : '#b45309',
+              background: isGlowing
+                ? `radial-gradient(circle at 35% 35%, #fef08a 0%, ${config.color} 50%, #92400e 100%)`
+                : 'radial-gradient(circle at 35% 35%, #fde047 0%, #d97706 45%, #92400e 80%, #713f12 100%)',
+              boxShadow: isGlowing
+                ? `0 0 20px ${config.glowColor}, 0 8px 24px rgba(0,0,0,0.6)`
+                : '0 8px 20px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4)',
+              transform: 'rotateX(20deg)',
             }}
           >
-            <div
-              className="w-3.5 h-3.5 rounded-full transition-colors flex items-center justify-center text-[8px]"
-              style={{
-                backgroundColor: isGlowing ? config.color : '#475569',
-              }}
-            >
-              {isGlowing ? '⭐' : ''}
+            {/* Concentric Lathe Grooves (レイジングライン) */}
+            <div className="absolute inset-2 rounded-full border border-amber-800/40 pointer-events-none" />
+            <div className="absolute inset-4 rounded-full border border-amber-900/30 pointer-events-none" />
+
+            {/* Cymbal Center Raised Bell Cup (カップ) */}
+            <div className="w-1/3 h-1/3 rounded-full bg-gradient-to-br from-amber-200 to-amber-700 border border-amber-950 shadow-md flex items-center justify-center pointer-events-none">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-950 shadow-inner" />
             </div>
+
+            {/* Cymbal Tilter & Boom Stand Arm under cymbal */}
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-2 h-4 bg-gradient-to-r from-slate-400 to-slate-600 rounded-b shadow pointer-events-none z-[-1]" />
+          </div>
+        ) : isKick ? (
+          // REALISTIC 22" BASS DRUM (大きな円筒シェルとフロントヘッド、フットペダル)
+          <div
+            className={`relative w-full h-full rounded-3xl border-4 transition-all duration-75 flex flex-col items-center justify-between p-2 shadow-2xl ${
+              kickPulse ? 'scale-105' : ''
+            }`}
+            style={{
+              borderColor: isGlowing ? config.color : '#e2e8f0',
+              background: isGlowing
+                ? `radial-gradient(circle at 50% 50%, #334155 0%, #0f172a 70%, ${config.color} 100%)`
+                : 'radial-gradient(circle at 50% 40%, #1e293b 0%, #0f172a 60%, #020617 100%)',
+              boxShadow: isGlowing
+                ? `0 0 28px ${config.glowColor}, inset 0 0 20px ${config.glowColor}`
+                : '0 12px 28px rgba(0,0,0,0.8), inset 0 3px 10px rgba(255,255,255,0.1)',
+            }}
+          >
+            {/* Chrome Tension Claws on Kick Hoop (テンションボルト) */}
+            <div className="absolute -top-1 left-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
+            <div className="absolute -top-1 right-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
+            <div className="absolute -bottom-1 left-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
+            <div className="absolute -bottom-1 right-4 w-3 h-2 bg-slate-300 rounded shadow pointer-events-none" />
+
+            {/* Front Head Port Hole (マイク穴) */}
+            <div className="absolute right-4 bottom-3 w-7 h-7 rounded-full bg-slate-950 border border-slate-700 shadow-inner flex items-center justify-center pointer-events-none">
+              <div className="w-5 h-5 rounded-full bg-black" />
+            </div>
+
+            {/* Drum Center Logo / Beater Impact Area */}
+            <div className="my-auto flex flex-col items-center justify-center pointer-events-none">
+              <div
+                className="w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors"
+                style={{
+                  borderColor: isGlowing ? config.color : '#475569',
+                  backgroundColor: isGlowing ? `${config.glowColor}40` : 'rgba(15,23,42,0.6)',
+                }}
+              >
+                <span className="text-sm">🥁</span>
+              </div>
+            </div>
+
+            {/* Chrome Kick Pedal Beater Footplate in front */}
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-10 h-6 bg-gradient-to-t from-slate-400 to-slate-200 rounded-t-lg border border-slate-500 shadow-md flex items-center justify-center pointer-events-none z-10">
+              <div className="w-1 h-3 bg-slate-700 rounded-full" />
+            </div>
+          </div>
+        ) : (
+          // REALISTIC TOMS & SNARE (立体シェル・スチールフープ・ホワイトコーテッドヘッド)
+          <div
+            className="relative w-full h-full rounded-full border-4 transition-transform shadow-2xl flex items-center justify-center"
+            style={{
+              borderColor: isGlowing ? config.color : isSnare ? '#94a3b8' : '#64748b',
+              background: isSnare
+                ? isGlowing
+                  ? `radial-gradient(circle at 40% 40%, #ffffff 0%, #f1f5f9 60%, ${config.color} 100%)`
+                  : 'radial-gradient(circle at 40% 40%, #ffffff 0%, #e2e8f0 70%, #cbd5e1 100%)'
+                : isGlowing
+                ? `radial-gradient(circle at 40% 40%, #38bdf8 0%, #0284c7 60%, #0369a1 100%)`
+                : 'radial-gradient(circle at 40% 40%, #1e293b 0%, #0f172a 75%, #020617 100%)',
+              boxShadow: isGlowing
+                ? `0 0 20px ${config.glowColor}, 0 8px 20px rgba(0,0,0,0.6)`
+                : '0 8px 18px rgba(0,0,0,0.6), inset 0 2px 6px rgba(255,255,255,0.3)',
+              transform: 'rotateX(22deg)',
+            }}
+          >
+            {/* Chrome Hoop Rim & Tension Lugs (フープとラグ) */}
+            <div className="absolute inset-1 rounded-full border border-slate-400/40 pointer-events-none" />
+
+            {/* Snare specific Buzz Ring / Muffle Ring */}
+            {isSnare && (
+              <div className="absolute inset-2.5 rounded-full border border-slate-300/60 pointer-events-none shadow-inner flex items-center justify-center">
+                <div className="w-3.5 h-3.5 rounded-full bg-slate-300/40" />
+              </div>
+            )}
+
+            {/* Floor Tom Legs or Tom Lugs */}
+            {isFloorTom && (
+              <>
+                <div className="absolute -left-1 top-2 w-1.5 h-4 bg-slate-300 rounded pointer-events-none" />
+                <div className="absolute -right-1 top-2 w-1.5 h-4 bg-slate-300 rounded pointer-events-none" />
+              </>
+            )}
           </div>
         )}
 
-        {/* Text Label */}
-        <div className="relative z-10 flex flex-col items-center justify-center text-center pointer-events-none px-1">
+        {/* PAD LABEL & SHORT KEY HINT */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
           <span
-            className="text-[11px] sm:text-xs font-black tracking-wider uppercase drop-shadow-md"
-            style={{ color: isCymbal ? '#451a03' : '#f8fafc' }}
+            className="text-[11px] sm:text-xs font-black tracking-wider uppercase drop-shadow-md text-center leading-tight"
+            style={{
+              color: isCymbal
+                ? '#451a03'
+                : isSnare
+                ? '#0f172a'
+                : '#f8fafc',
+            }}
           >
-            {config.shortName}
+            {drumLayout === 'compact' ? (
+              part === 'crash' ? 'クラッシュ' :
+              part === 'hihatClosed' ? 'ハイハット' :
+              part === 'snare' ? 'スネア' :
+              part === 'kick' ? 'バスドラム' : config.shortName
+            ) : (
+              config.shortName
+            )}
           </span>
+          {drumLayout === 'compact' && (
+            <span
+              className="text-[8px] sm:text-[9px] font-black uppercase opacity-75 drop-shadow-sm leading-none"
+              style={{
+                color: isCymbal ? '#78350f' : isSnare ? '#475569' : '#94a3b8',
+              }}
+            >
+              {config.shortName}
+            </span>
+          )}
           {showKeyHints && (
-            <span className="mt-0.5 text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-slate-200 border border-white/15">
+            <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-black/60 text-slate-100 border border-white/20 mt-0.5">
               {config.keyLabel.split(' / ')[0]}
             </span>
           )}
         </div>
+
+        {/* LOCKED BADGE (for RPG Training curriculum) */}
+        {!isUnlocked && (
+          <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center bg-black/70 z-30 pointer-events-none">
+            <Lock className="w-4 h-4 text-slate-400 mb-0.5" />
+            <span className="text-[9px] font-bold text-slate-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-slate-700">
+              未解放
+            </span>
+          </div>
+        )}
       </div>
     );
   };
@@ -338,25 +453,32 @@ export const DrumSet: React.FC<DrumSetProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full max-w-lg aspect-square sm:aspect-[4/3] mx-auto flex items-center justify-center p-2 sm:p-4 select-none touch-none transition-transform duration-75 ${
-        stageVibrate ? 'translate-y-0.5' : ''
-      }`}
+      className="relative w-full max-w-lg aspect-[4/3] sm:aspect-[16/11] mx-auto flex items-center justify-center p-1 sm:p-3 select-none touch-none"
+      style={{
+        perspective: '900px', // Authentic 3D depth
+      }}
     >
-      {/* Visual background kit stage with cute pop lighting */}
-      <div className="absolute inset-0 bg-slate-950/85 rounded-3xl border-2 border-indigo-900/40 shadow-2xl backdrop-blur-sm overflow-hidden">
-        {/* Subtle Drum Rug Grid Pattern */}
+      {/* 3D DRUM STAGE CARPET & METALLIC LIGHTING */}
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden"
+        style={{
+          transform: 'rotateX(12deg)',
+          transformOrigin: 'bottom center',
+        }}
+      >
+        {/* Drum Rug Texture */}
         <div
-          className="absolute inset-0 opacity-15 bg-[radial-gradient(#818cf8_1.5px,transparent_1.5px)]"
-          style={{ backgroundSize: '20px 20px' }}
+          className="absolute inset-0 opacity-10 bg-[radial-gradient(#94a3b8_1.5px,transparent_1.5px)]"
+          style={{ backgroundSize: '16px 16px' }}
         />
-        {/* Colorful stage lights */}
-        <div className="absolute -top-10 left-1/4 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -top-10 right-1/4 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute inset-x-1/4 bottom-1/4 h-1/2 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Stage Spotlights */}
+        <div className="absolute -top-8 left-1/4 w-36 h-36 bg-pink-500/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-8 right-1/4 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
       </div>
 
-      {/* Particle & Star Overlay */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl z-30">
+      {/* HIT SPARKLE PARTICLES OVERLAY */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl z-40">
         {particles.map((p) => (
           <div
             key={p.id}
@@ -385,127 +507,214 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         ))}
       </div>
 
-      {/* DRUM LAYOUT RENDERER */}
+      {/* AUTHENTIC DRUM KIT ARRANGEMENTS ACCORDING TO USER SETTING */}
       {drumLayout === 'compact' ? (
-        // KIDS COMPACT 4-PAD LAYOUT (Crash, Hi-Hat, Snare, Huge Kick)
-        <div className="relative w-full h-full max-w-md max-h-[460px] flex flex-col justify-between p-2">
-          {/* Top Row: Crash & Hi-Hat */}
-          <div className="flex items-center justify-between w-full h-[40%] px-2">
-            {renderDrumPad('crash', 'rotate-[-8deg]', 'w-[45%] max-w-[140px]', 'aspect-square', true)}
-            {renderDrumPad('hihatClosed', 'rotate-[8deg]', 'w-[45%] max-w-[140px]', 'aspect-square', true)}
+        /* 幼児・キッズ向け 4パッド実機配置 (左上クラッシュ・左ハット・中央スネア・下キック) */
+        <div
+          className="relative w-full h-full flex flex-col justify-between p-1 sm:p-2.5 z-10"
+          style={{
+            transform: 'rotateX(18deg)',
+            transformOrigin: 'bottom center',
+          }}
+        >
+          {/* TOP ROW: Crash Cymbal (Top-Left on high stand) & Real Kit Kids Guide Badge (Right) */}
+          <div className="flex items-center justify-between w-full h-[32%] px-2">
+            {/* Crash Cymbal (Top-Left elevated boom cymbal) */}
+            <div className="w-[38%] max-w-[135px] aspect-square flex items-center justify-center">
+              {render3DPad('crash', 'w-full h-full')}
+            </div>
+
+            {/* Kids layout guide badge */}
+            <div className="flex flex-col items-end justify-center pointer-events-none pr-1">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 border border-amber-400/50 text-amber-300 shadow-md">
+                <span className="text-sm">⭐</span>
+                <span className="text-xs font-black tracking-tight">幼児用4パッド (実機配置)</span>
+              </div>
+              <span className="text-[10px] text-slate-300 font-bold mt-1 bg-slate-950/80 px-2 py-0.5 rounded-md border border-slate-800">
+                実際のドラムセットと同じ配置 🥁
+              </span>
+            </div>
           </div>
-          {/* Middle Row: Snare */}
-          <div className="flex items-center justify-center w-full h-[28%]">
-            {renderDrumPad('snare', 'border-2 border-cyan-400/50', 'w-[55%] max-w-[160px]', 'aspect-square')}
+
+          {/* MIDDLE ROW: Hi-Hat (Left side) & Snare Drum (Center/Front) */}
+          <div className="flex items-center justify-between w-full h-[36%] px-2 my-auto">
+            {/* Hi-Hat (Left position, hi-hat stand) */}
+            <div className="w-[44%] max-w-[155px] aspect-square flex items-center justify-center">
+              {render3DPad('hihatClosed', 'w-full h-full')}
+            </div>
+
+            {/* Snare Drum (Directly in front between knees) */}
+            <div className="w-[48%] max-w-[170px] aspect-square flex items-center justify-center">
+              {render3DPad('snare', 'w-full h-full')}
+            </div>
           </div>
-          {/* Bottom Row: Huge Bass Drum */}
+
+          {/* BOTTOM ROW: Bass Drum / Kick (Bottom Center on floor) */}
           <div className="flex items-center justify-center w-full h-[32%] pb-1">
-            {renderDrumPad('kick', 'border-4 border-amber-500 bg-slate-900', 'w-[85%] max-w-[280px] h-full max-h-[110px]', 'rounded-3xl')}
+            <div className="w-[84%] max-w-[320px] h-full flex items-center justify-center">
+              {render3DPad('kick', 'w-full h-full max-h-[112px]')}
+            </div>
           </div>
         </div>
       ) : drumLayout === 'leftHanded' ? (
-        // LEFT-HANDED MIRROR LAYOUT
-        <div className="relative w-full h-full max-w-md max-h-[460px] flex flex-col justify-between p-1 sm:p-3">
-          {/* Top Row: Ride (Left) | Toms | Crash (Right) */}
-          <div className="flex items-center justify-between w-full h-[28%] px-1">
-            {renderDrumPad('ride', 'self-start rotate-[-12deg]', 'w-[28%] max-w-[100px]', 'aspect-square', true)}
-            <div className="flex items-center justify-center gap-2 sm:gap-3 w-[40%]">
-              {renderDrumPad('tomLow', '', 'w-[48%] max-w-[72px]', 'aspect-square')}
-              {renderDrumPad('tomHigh', '', 'w-[48%] max-w-[72px]', 'aspect-square')}
+        /* LEFT-HANDED MIRRORED KIT */
+        <div
+          className="relative w-full h-full flex flex-col justify-between p-1 sm:p-2 z-10"
+          style={{
+            transform: 'rotateX(18deg)',
+            transformOrigin: 'bottom center',
+          }}
+        >
+          {/* TOP ROW: Ride (Left) | Toms (Center) | Crash (Right) */}
+          <div className="flex items-center justify-between w-full h-[32%] px-1">
+            <div className="w-[28%] max-w-[105px] aspect-square flex items-center justify-center">
+              {render3DPad('ride', 'w-full h-full')}
             </div>
-            {renderDrumPad('crash', 'self-start rotate-[12deg]', 'w-[28%] max-w-[100px]', 'aspect-square', true)}
+            <div className="flex items-center justify-center gap-2 sm:gap-3 w-[40%] h-full">
+              <div className="w-[48%] max-w-[78px] aspect-square">
+                {render3DPad('tomLow', 'w-full h-full')}
+              </div>
+              <div className="w-[46%] max-w-[75px] aspect-square">
+                {render3DPad('tomHigh', 'w-full h-full')}
+              </div>
+            </div>
+            <div className="w-[28%] max-w-[105px] aspect-square flex items-center justify-center">
+              {render3DPad('crash', 'w-full h-full')}
+            </div>
           </div>
 
-          {/* Middle Row: Floor Tom (Left) | Snare (Center) | Hi-Hat (Right) */}
-          <div className="flex items-center justify-between w-full h-[34%] px-1 my-auto">
-            <div className="flex items-center justify-center w-[30%] max-w-[105px]">
-              {renderDrumPad('tomFloor', '', 'w-full', 'aspect-square')}
+          {/* MIDDLE ROW: Floor Tom (Left) | Snare (Center) | Hi-Hat (Right) */}
+          <div className="flex items-center justify-between w-full h-[36%] px-1 my-auto">
+            <div className="w-[30%] max-w-[110px] aspect-square flex items-center justify-center">
+              {render3DPad('tomFloor', 'w-full h-full')}
             </div>
-            <div className="flex items-center justify-center w-[38%] max-w-[130px]">
-              {renderDrumPad('snare', 'border-2 border-cyan-500/40', 'w-full', 'aspect-square')}
+            <div className="w-[40%] max-w-[140px] aspect-square flex items-center justify-center">
+              {render3DPad('snare', 'w-full h-full')}
             </div>
-            <div className="flex flex-col items-center justify-center gap-1 w-[26%] max-w-[90px]">
-              {renderDrumPad('hihatOpen', '', 'w-[75%] max-w-[65px]', 'aspect-square', true)}
-              {renderDrumPad('hihatClosed', '', 'w-[95%] max-w-[85px]', 'aspect-square', true)}
+            <div className="flex flex-col items-center justify-center gap-1 w-[26%] max-w-[90px] h-full">
+              <div className="w-[80%] max-w-[65px] aspect-square">
+                {render3DPad('hihatOpen', 'w-full h-full')}
+              </div>
+              <div className="w-[98%] max-w-[85px] aspect-square">
+                {render3DPad('hihatClosed', 'w-full h-full')}
+              </div>
             </div>
           </div>
 
-          {/* Bottom Row: Bass Drum */}
+          {/* BOTTOM ROW: Kick (Center) */}
           <div className="flex items-center justify-center w-full h-[32%] pb-1">
-            <div className="w-[68%] max-w-[240px] h-full flex items-center justify-center">
-              {renderDrumPad('kick', 'border-4 border-amber-500/50 bg-slate-900', 'w-full h-full max-h-[110px]', 'rounded-3xl')}
+            <div className="w-[72%] max-w-[270px] h-full flex items-center justify-center">
+              {render3DPad('kick', 'w-full h-full max-h-[105px]')}
             </div>
           </div>
         </div>
       ) : drumLayout === 'wide' ? (
-        // WIDE LAYOUT (3 Toms top row)
-        <div className="relative w-full h-full max-w-md max-h-[460px] flex flex-col justify-between p-1 sm:p-2">
-          {/* Top Row: Crash | High Tom | Low Tom | Floor Tom | Ride */}
-          <div className="flex items-center justify-between w-full h-[30%] px-1">
-            {renderDrumPad('crash', 'rotate-[-10deg]', 'w-[20%] max-w-[75px]', 'aspect-square', true)}
-            {renderDrumPad('tomHigh', '', 'w-[18%] max-w-[65px]', 'aspect-square')}
-            {renderDrumPad('tomLow', '', 'w-[18%] max-w-[65px]', 'aspect-square')}
-            {renderDrumPad('tomFloor', '', 'w-[18%] max-w-[65px]', 'aspect-square')}
-            {renderDrumPad('ride', 'rotate-[10deg]', 'w-[20%] max-w-[75px]', 'aspect-square', true)}
+        /* WIDE ARRANGEMENT */
+        <div
+          className="relative w-full h-full flex flex-col justify-between p-1 sm:p-2 z-10"
+          style={{
+            transform: 'rotateX(18deg)',
+            transformOrigin: 'bottom center',
+          }}
+        >
+          {/* TOP ROW: Crash | High Tom | Low Tom | Floor Tom | Ride */}
+          <div className="flex items-center justify-between w-full h-[32%] px-0.5 gap-1">
+            <div className="w-[19%] aspect-square flex items-center justify-center">
+              {render3DPad('crash', 'w-full h-full')}
+            </div>
+            <div className="w-[18%] aspect-square">
+              {render3DPad('tomHigh', 'w-full h-full')}
+            </div>
+            <div className="w-[18%] aspect-square">
+              {render3DPad('tomLow', 'w-full h-full')}
+            </div>
+            <div className="w-[21%] aspect-square">
+              {render3DPad('tomFloor', 'w-full h-full')}
+            </div>
+            <div className="w-[19%] aspect-square flex items-center justify-center">
+              {render3DPad('ride', 'w-full h-full')}
+            </div>
           </div>
 
-          {/* Middle Row: Hi-Hat Open/Closed (Left) & Snare (Right) */}
-          <div className="flex items-center justify-around w-full h-[35%] px-3">
-            <div className="flex items-center gap-1.5 w-[42%] justify-center">
-              {renderDrumPad('hihatOpen', '', 'w-[48%] max-w-[70px]', 'aspect-square', true)}
-              {renderDrumPad('hihatClosed', '', 'w-[52%] max-w-[78px]', 'aspect-square', true)}
+          {/* MIDDLE ROW: Hi-Hat & Snare */}
+          <div className="flex items-center justify-around w-full h-[36%] px-3 my-auto">
+            <div className="flex items-center justify-center gap-2 w-[44%] h-full">
+              <div className="w-[45%] aspect-square">
+                {render3DPad('hihatOpen', 'w-full h-full')}
+              </div>
+              <div className="w-[50%] aspect-square">
+                {render3DPad('hihatClosed', 'w-full h-full')}
+              </div>
             </div>
-            <div className="flex items-center justify-center w-[48%] max-w-[145px]">
-              {renderDrumPad('snare', 'border-2 border-cyan-500/40', 'w-full', 'aspect-square')}
+            <div className="w-[42%] max-w-[145px] aspect-square flex items-center justify-center">
+              {render3DPad('snare', 'w-full h-full')}
             </div>
           </div>
 
-          {/* Bottom Row: Bass Drum */}
+          {/* BOTTOM ROW: Kick */}
           <div className="flex items-center justify-center w-full h-[32%] pb-1">
-            <div className="w-[75%] max-w-[260px] h-full flex items-center justify-center">
-              {renderDrumPad('kick', 'border-4 border-amber-500/50 bg-slate-900', 'w-full h-full max-h-[110px]', 'rounded-3xl')}
+            <div className="w-[72%] max-w-[270px] h-full flex items-center justify-center">
+              {render3DPad('kick', 'w-full h-full max-h-[105px]')}
             </div>
           </div>
         </div>
       ) : (
-        // STANDARD RIGHT-HANDED LAYOUT
-        <div className="relative w-full h-full max-w-md max-h-[460px] flex flex-col justify-between p-1 sm:p-3">
-          {/* Top Row: Crash | High Tom & Low Tom | Ride */}
-          <div className="flex items-center justify-between w-full h-[28%] px-1">
-            {renderDrumPad('crash', 'self-start rotate-[-12deg]', 'w-[28%] max-w-[100px]', 'aspect-square', true)}
-            <div className="flex items-center justify-center gap-2 sm:gap-3 w-[40%]">
-              {renderDrumPad('tomHigh', '', 'w-[48%] max-w-[72px]', 'aspect-square')}
-              {renderDrumPad('tomLow', '', 'w-[48%] max-w-[72px]', 'aspect-square')}
+        /* STANDARD 8-PIECE REAL DRUM KIT ARRANGEMENT (プロドラマー視点レイアウト) */
+        <div
+          className="relative w-full h-full flex flex-col justify-between p-1 sm:p-2 z-10"
+          style={{
+            transform: 'rotateX(18deg)',
+            transformOrigin: 'bottom center',
+          }}
+        >
+          {/* TOP ROW: Crash Cymbal (Left) | High Tom & Low Tom (Center) | Ride Cymbal (Right) */}
+          <div className="flex items-center justify-between w-full h-[32%] px-1">
+            <div className="w-[28%] max-w-[105px] aspect-square flex items-center justify-center">
+              {render3DPad('crash', 'w-full h-full')}
             </div>
-            {renderDrumPad('ride', 'self-start rotate-[12deg]', 'w-[28%] max-w-[100px]', 'aspect-square', true)}
+            <div className="flex items-center justify-center gap-2 sm:gap-3 w-[40%] h-full">
+              <div className="w-[46%] max-w-[75px] aspect-square">
+                {render3DPad('tomHigh', 'w-full h-full')}
+              </div>
+              <div className="w-[48%] max-w-[78px] aspect-square">
+                {render3DPad('tomLow', 'w-full h-full')}
+              </div>
+            </div>
+            <div className="w-[28%] max-w-[105px] aspect-square flex items-center justify-center">
+              {render3DPad('ride', 'w-full h-full')}
+            </div>
           </div>
 
-          {/* Middle Row: Hi-Hat | Snare | Floor Tom */}
-          <div className="flex items-center justify-between w-full h-[34%] px-1 my-auto">
-            <div className="flex flex-col items-center justify-center gap-1 w-[26%] max-w-[90px]">
-              {renderDrumPad('hihatOpen', '', 'w-[75%] max-w-[65px]', 'aspect-square', true)}
-              {renderDrumPad('hihatClosed', '', 'w-[95%] max-w-[85px]', 'aspect-square', true)}
+          {/* MIDDLE ROW: Hi-Hat Open/Closed (Left) | Snare (Center-Left) | Floor Tom (Right) */}
+          <div className="flex items-center justify-between w-full h-[36%] px-1 my-auto">
+            <div className="flex flex-col items-center justify-center gap-1 w-[26%] max-w-[90px] h-full">
+              <div className="w-[80%] max-w-[65px] aspect-square">
+                {render3DPad('hihatOpen', 'w-full h-full')}
+              </div>
+              <div className="w-[98%] max-w-[85px] aspect-square">
+                {render3DPad('hihatClosed', 'w-full h-full')}
+              </div>
             </div>
-            <div className="flex items-center justify-center w-[38%] max-w-[130px]">
-              {renderDrumPad('snare', 'border-2 border-cyan-500/40', 'w-full', 'aspect-square')}
+            <div className="w-[40%] max-w-[140px] aspect-square flex items-center justify-center">
+              {render3DPad('snare', 'w-full h-full')}
             </div>
-            <div className="flex items-center justify-center w-[30%] max-w-[105px]">
-              {renderDrumPad('tomFloor', '', 'w-full', 'aspect-square')}
+            <div className="w-[30%] max-w-[110px] aspect-square flex items-center justify-center">
+              {render3DPad('tomFloor', 'w-full h-full')}
             </div>
           </div>
 
-          {/* Bottom Row: Bass Drum */}
+          {/* BOTTOM ROW: 22" Bass Drum (Center bottom with pedal) */}
           <div className="flex items-center justify-center w-full h-[32%] pb-1">
-            <div className="w-[68%] max-w-[240px] h-full flex items-center justify-center">
-              {renderDrumPad('kick', 'border-4 border-amber-500/50 bg-slate-900', 'w-full h-full max-h-[110px]', 'rounded-3xl')}
+            <div className="w-[72%] max-w-[270px] h-full flex items-center justify-center">
+              {render3DPad('kick', 'w-full h-full max-h-[105px]')}
             </div>
           </div>
         </div>
       )}
 
       {isFreePlay && (
-        <div className="absolute bottom-2 right-3 pointer-events-none text-[10px] font-bold text-amber-300 bg-slate-900/90 px-2.5 py-0.5 rounded-full border border-amber-400/40 flex items-center gap-1 shadow">
-          <span>🥁</span> じゆう練習中
+        <div className="absolute bottom-2 right-3 pointer-events-none text-[10px] font-bold text-amber-300 bg-slate-900/90 px-2.5 py-0.5 rounded-full border border-amber-400/40 flex items-center gap-1 shadow z-30">
+          <span>🥁</span> 3Dスタジオ練習中
         </div>
       )}
     </div>

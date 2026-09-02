@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DrumPartId, PlayerSettings } from '../types';
+import { DrumPartId, PlayerSettings, DrumLayoutType } from '../types';
 import { DrumSet } from './DrumSet';
 import { drumSynth } from '../audio/drumSynth';
-import { ArrowLeft, Play, Square, CircleDot, Volume2, RotateCcw, Activity } from 'lucide-react';
+import { ArrowLeft, Play, Square, CircleDot, Volume2, RotateCcw, Activity, Layout } from 'lucide-react';
 
 interface FreePlayScreenProps {
   settings: PlayerSettings;
@@ -19,6 +19,7 @@ export const FreePlayScreen: React.FC<FreePlayScreenProps> = ({ settings, onBack
   const [isMetronomePlaying, setIsMetronomePlaying] = useState<boolean>(false);
   const [timeSignature, setTimeSignature] = useState<string>('4/4');
   const [currentBeat, setCurrentBeat] = useState<number>(0);
+  const [currentLayout, setCurrentLayout] = useState<DrumLayoutType>(settings.drumLayout || 'standard');
 
   // Recording & Loop playback
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -249,15 +250,52 @@ export const FreePlayScreen: React.FC<FreePlayScreenProps> = ({ settings, onBack
         </div>
       </div>
 
-      {/* DRUM SET */}
-      <div className="flex-1 flex items-center justify-center">
+      {/* LAYOUT SELECTOR & DRUM SET */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-1.5 w-full">
+        {/* Quick layout toggle */}
+        <div className="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+          <button
+            onClick={() => setCurrentLayout('standard')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+              currentLayout === 'standard'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🥁</span>
+            <span>8パッド (標準)</span>
+          </button>
+          <button
+            onClick={() => setCurrentLayout('compact')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+              currentLayout === 'compact'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <span>⭐</span>
+            <span>幼児用4パッド (実機配置)</span>
+          </button>
+          <button
+            onClick={() => setCurrentLayout('leftHanded')}
+            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+              currentLayout === 'leftHanded'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🖐️</span>
+            <span>左利き</span>
+          </button>
+        </div>
+
         <DrumSet
           onDrumHit={handleDrumHit}
           activeGlowingParts={activeGlows}
           showKeyHints={settings.showKeyHints}
           hapticsEnabled={settings.hapticsEnabled}
           isFreePlay={true}
-          drumLayout={settings.drumLayout || 'standard'}
+          drumLayout={currentLayout}
           padScale={settings.padScale || 'normal'}
         />
       </div>

@@ -12,11 +12,14 @@ import { MyPageScreen } from './components/MyPageScreen';
 import { AuthModal } from './components/AuthModal';
 import { GitHubModal } from './components/GitHubModal';
 import { CourseSelectModal } from './components/CourseSelectModal';
+import { RPGCourseModal } from './components/RPGCourseModal';
 import { AdminLockScreen } from './components/AdminLockScreen';
 import { AdminPanelScreen } from './components/AdminPanelScreen';
 import { DeviceGateScreen } from './components/DeviceGateScreen';
 import { drumSynth } from './audio/drumSynth';
 import { getLocalUsers } from './utils/storageFallback';
+import { loadRPGProgress, getRPGLevelConfig } from './data/rpgCurriculum';
+import { RPGProgress } from './types';
 
 const DEV_APP_URL = 'https://ais-dev-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
 const SHARED_APP_URL = 'https://ais-pre-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
@@ -50,6 +53,11 @@ export default function App() {
   const [isCourseModalOpen, setIsCourseModalOpen] = useState<boolean>(false);
   const [courseState, setCourseState] = useState<CourseState | null>(null);
   const [existingUsers, setExistingUsers] = useState<any[]>([]);
+
+  // RPG Curriculum & Level Progression
+  const [isRPGModalOpen, setIsRPGModalOpen] = useState<boolean>(false);
+  const [activeRPGLevel, setActiveRPGLevel] = useState<number | null>(null);
+  const [rpgProgress, setRpgProgress] = useState<RPGProgress>(() => loadRPGProgress());
 
   // Developer Environment & Admin Gate
   const isDevEnvironment =
@@ -227,18 +235,32 @@ export default function App() {
   }, []);
 
   const handleStartGame = () => {
+    setActiveRPGLevel(null);
     setCourseState(null);
     drumSynth.init();
     setScreen('game');
   };
 
   const handleStartCourse = (newCourse: CourseState) => {
+    setActiveRPGLevel(null);
     setCourseState(newCourse);
     setIsCourseModalOpen(false);
     if (newCourse.songsQueue.length > 0) {
       setSelectedSong(newCourse.songsQueue[0]);
     }
     setSelectedDifficulty(newCourse.difficulty);
+    drumSynth.init();
+    setScreen('game');
+  };
+
+  const handleStartRPGLevel = (level: number) => {
+    const config = getRPGLevelConfig(level);
+    const targetSong = SONGS.find((s) => s.id === config.targetSongId) || SONGS[0];
+    setSelectedSong(targetSong);
+    setSelectedDifficulty(config.difficulty);
+    setActiveRPGLevel(level);
+    setCourseState(null);
+    setIsRPGModalOpen(false);
     drumSynth.init();
     setScreen('game');
   };
@@ -348,7 +370,13 @@ export default function App() {
             onOpenGitHub={() => setIsGitHubModalOpen(true)}
             onOpenAdmin={() => setScreen('admin')}
             onOpenCourseModal={() => setIsCourseModalOpen(true)}
+            onOpenRPGModal={() => {
+              setRpgProgress(loadRPGProgress());
+              setIsRPGModalOpen(true);
+            }}
+            rpgLevel={rpgProgress.currentLevel}
             onStartRandomGame={() => {
+              setActiveRPGLevel(null);
               const randomSong = SONGS[Math.floor(Math.random() * SONGS.length)];
               setSelectedSong(randomSong);
               drumSynth.init();
@@ -362,6 +390,8 @@ export default function App() {
             song={selectedSong}
             difficulty={selectedDifficulty}
             settings={settings}
+            rpgLevel={activeRPGLevel}
+            userLevel={rpgProgress.currentLevel}
             onFinishGame={handleFinishGame}
             onExit={() => {
               setCourseState(null);
@@ -379,6 +409,8 @@ export default function App() {
             settings={settings}
             currentUser={currentUser}
             courseState={courseState}
+            rpgLevel={activeRPGLevel}
+            userLevel={rpgProgress.currentLevel}
             onUpdateUserBests={(updatedUser) => setCurrentUser(updatedUser)}
             onPlayAgain={handleStartGame}
             onSelectSong={() => {
@@ -389,12 +421,17 @@ export default function App() {
             onOpenMyPage={() => setScreen('mypage')}
             onNextCourseSong={handleNextCourseSong}
             onExitCourse={handleExitCourse}
+            onNextRPGLevel={(nextLvl) => {
+              setRpgProgress(loadRPGProgress());
+              handleStartRPGLevel(nextLvl);
+            }}
           />
         )}
 
         {screen === 'mypage' && currentUser && (
           <MyPageScreen
             user={currentUser}
+            userLevel={rpgProgress.currentLevel}
             onBackToMenu={() => setScreen('select')}
             onOpenSwitchUser={() => setIsAuthModalOpen(true)}
             onSelectSongToPlay={(song, diff) => {
@@ -448,6 +485,17 @@ export default function App() {
           onClose={() => setIsCourseModalOpen(false)}
           defaultDifficulty={selectedDifficulty}
           onStartCourse={handleStartCourse}
+        />
+
+        {/* RPG Progression & Training Course Modal */}
+        <RPGCourseModal
+          isOpen={isRPGModalOpen}
+          onClose={() => {
+            setRpgProgress(loadRPGProgress());
+            setIsRPGModalOpen(false);
+          }}
+          rpgProgress={rpgProgress}
+          onStartLevel={handleStartRPGLevel}
         />
       </main>
     </div>
