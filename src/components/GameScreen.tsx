@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SongData, Difficulty, DrumPartId, RhythmNote, JudgmentType, ScoreState, JudgmentFeedback, PlayerSettings, RPGCoach } from '../types';
+import { SongData, Difficulty, DrumPartId, RhythmNote, JudgmentType, ScoreState, JudgmentFeedback, PlayerSettings, RPGCoach, GrooveTimingType } from '../types';
 import { DrumSet } from './DrumSet';
 import { MascotCharacter } from './MascotCharacter';
 import { HitBurstEffect } from './HitBurstEffect';
@@ -72,7 +72,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     accuracy: 100,
     grooveGauge: 0,
     isFever: false,
+    grooveStats: {
+      rushCount: 0,
+      justCount: 0,
+      laybackCount: 0,
+      avgOffsetMs: 0,
+      timingType: 'just',
+    },
   });
+
+  const [grooveBadge, setGrooveBadge] = useState<{ label: string; color: string; offsetMs: number } | null>(null);
 
   // Reference to current active notes for the game loop
   const notesRef = useRef<RhythmNote[]>([]);
@@ -291,6 +300,44 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       const newGauge = Math.max(0, Math.min(100, prev.grooveGauge + gaugeGain));
       const isFever = newGauge >= 100 || (prev.isFever && newGauge > 25);
 
+      // 2. GROOVE ANALYZER (Timing Feel: Rush / Pocket / Layback calculation)
+      const prevGroove = prev.grooveStats || {
+        rushCount: 0,
+        justCount: 0,
+        laybackCount: 0,
+        avgOffsetMs: 0,
+        timingType: 'just' as GrooveTimingType,
+      };
+
+      let newRush = prevGroove.rushCount;
+      let newJust = prevGroove.justCount;
+      let newLayback = prevGroove.laybackCount;
+      let newAvgOffset = prevGroove.avgOffsetMs;
+
+      if (!isMiss) {
+        if (offsetMs < -14) {
+          newRush++;
+          setGrooveBadge({ label: '前ノリ (Rush)', color: 'text-pink-400 border-pink-500/40 bg-pink-950/70', offsetMs });
+        } else if (offsetMs > 14) {
+          newLayback++;
+          setGrooveBadge({ label: '後ノリ (Layback)', color: 'text-cyan-400 border-cyan-500/40 bg-cyan-950/70', offsetMs });
+        } else {
+          newJust++;
+          setGrooveBadge({ label: 'ジャスト (Pocket)', color: 'text-amber-300 border-amber-500/40 bg-amber-950/70', offsetMs });
+        }
+        setTimeout(() => setGrooveBadge(null), 550);
+
+        const totalValid = newRush + newJust + newLayback;
+        newAvgOffset = Math.round((prevGroove.avgOffsetMs * (totalValid - 1) + offsetMs) / totalValid);
+      }
+
+      const timingType: GrooveTimingType =
+        newJust >= newRush && newJust >= newLayback
+          ? 'just'
+          : newRush > newLayback
+          ? 'rush'
+          : 'layback';
+
       return {
         score: prev.score + Math.round(pts),
         combo: newCombo,
@@ -303,6 +350,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         accuracy: Number(accuracy.toFixed(1)),
         grooveGauge: newGauge,
         isFever,
+        grooveStats: {
+          rushCount: newRush,
+          justCount: newJust,
+          laybackCount: newLayback,
+          avgOffsetMs: newAvgOffset,
+          timingType,
+        },
       };
     });
   };
@@ -611,6 +665,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           combo={scoreState.combo}
           isFever={scoreState.isFever}
         />
+
+        {/* 2. REAL-TIME GROOVE ANALYZER POPUP */}
+        {grooveBadge && (
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+            <div className={`px-2.5 py-0.5 rounded-full border text-[10px] sm:text-xs font-mono font-black shadow-lg flex items-center gap-1.5 ${grooveBadge.color}`}>
+              <span>{grooveBadge.label}</span>
+              <span className="opacity-80">({grooveBadge.offsetMs > 0 ? `+${grooveBadge.offsetMs}` : grooveBadge.offsetMs}ms)</span>
+            </div>
+          </div>
+        )}
 
         {/* 3D Angled Real Drum Set */}
         <DrumSet

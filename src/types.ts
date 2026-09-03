@@ -62,10 +62,14 @@ export interface RhythmNote {
 
 export type JudgmentType = 'PERFECT' | 'GREAT' | 'GOOD' | 'MISS';
 
+export type AmbiencePreset = 'dead' | 'vintage' | 'arena';
+export type GrooveTimingType = 'JUST' | 'RUSH' | 'LAYBACK' | 'just' | 'rush' | 'layback';
+
 export interface JudgmentFeedback {
   id: string;
   type: JudgmentType;
   offsetMs?: number; // ms
+  grooveType?: GrooveTimingType;
   part: DrumPartId;
   x?: number;
   y?: number;
@@ -158,6 +162,13 @@ export interface ScoreState {
   accuracy: number;
   grooveGauge: number; // 0 to 100
   isFever: boolean;
+  grooveStats?: {
+    avgOffsetMs: number;
+    rushCount: number;
+    justCount: number;
+    laybackCount: number;
+    recentOffsets: number[];
+  };
 }
 
 export type RPGDifficultyTier = 'beginner' | 'intermediate' | 'advanced';
@@ -263,6 +274,7 @@ export interface PlayerSettings {
   currentUserId?: string;
   drumLayout: DrumLayoutType;
   padScale: PadScale;
+  ambiencePreset?: AmbiencePreset;
 }
 
 export type GameScreen =

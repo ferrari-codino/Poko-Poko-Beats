@@ -46,3 +46,98 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Drumhead Bessel membrane physical vibration ripple */
+@keyframes membrane-ripple {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.85;
+    border-width: 3px;
+  }
+  50% {
+    opacity: 0.55;
+    border-width: 2px;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+.animate-membrane-ripple {
+  animation: membrane-ripple 0.32s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+/* Cymbal metallic shimmer vibration */
+@keyframes cymbal-shimmer {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: brightness(1.3) contrast(1.2);
+  }
+  25% {
+    transform: rotate(2.5deg) scale(0.98);
+  }
+  50% {
+    transform: rotate(-2.5deg) scale(1.02);
+  }
+  75% {
+    transform: rotate(1deg) scale(0.99);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    filter: brightness(1);
+  }
+}
+
+.animate-cymbal-shimmer {
+  animation: cymbal-shimmer 0.28s ease-out forwards;
+}
+
+/* Kick Bass Drum sub-bass air pressure shockwave */
+@keyframes kick-sub-shockwave {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-kick-sub-shockwave {
+  animation: kick-sub-shockwave 0.35s cubic-bezier(0.15, 0.9, 0.2, 1) forwards;
+}
+
+/* Stage sub-bass thump shake */
+@keyframes stage-thump {
+  0% { transform: scale(1) translateY(0); }
+  30% { transform: scale(1.015) translateY(1.5px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.animate-stage-thump {
+  animation: stage-thump 0.16s ease-out forwards;
+}
+
+/* Virtual Drumstick swing */
+@keyframes stick-strike {
+  0% {
+    transform: translateY(-24px) rotate(-18deg) scale(1.05);
+  }
+  40% {
+    transform: translateY(6px) rotate(8deg) scale(0.96);
+  }
+  65% {
+    transform: translateY(-8px) rotate(-4deg) scale(1);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+}
+
+.animate-stick-strike {
+  animation: stick-strike 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+

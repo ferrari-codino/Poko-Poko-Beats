@@ -41,6 +41,7 @@ interface SongSelectScreenProps {
   onOpenRPGModal?: () => void;
   onStartRPGLevel?: (level: number) => void;
   rpgLevel?: number;
+  onOpenShowcase?: () => void;
 }
 
 export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
@@ -63,6 +64,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
   onOpenRPGModal,
   onStartRPGLevel,
   rpgLevel = 1,
+  onOpenShowcase,
 }) => {
   const currentDiffInfo = selectedSong.difficulties[selectedDifficulty];
   const mascot = MASCOTS[currentUser?.avatarId || 'pokota'] || MASCOTS.pokota;
@@ -187,6 +189,20 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             </button>
           )}
 
+          {/* POKO-POKO BEATS SPECTACULAR FEATURES SHOWCASE BUTTON */}
+          {onOpenShowcase && (
+            <button
+              id="open-showcase-btn"
+              type="button"
+              onClick={onOpenShowcase}
+              className="px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-400 via-pink-500 to-cyan-400 hover:opacity-95 active:scale-95 text-slate-950 text-xs font-black border-2 border-white/70 flex items-center gap-1.5 transition shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse"
+              title="Poko-poko Beats の神機能プレゼンテーション"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-current text-slate-950" />
+              <span>神機能紹介</span>
+            </button>
+          )}
+
           <button
             id="open-ideas-btn"
             type="button"
@@ -247,6 +263,38 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
           切替
         </button>
       </div>
+
+      {/* POKO-POKO BEATS SPECTACULAR SHOWCASE CALLOUT BANNER */}
+      {onOpenShowcase && (
+        <button
+          type="button"
+          onClick={onOpenShowcase}
+          className="w-full mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 border-2 border-amber-400/60 shadow-lg flex items-center justify-between group transition-all text-left relative overflow-hidden"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 via-pink-500 to-cyan-400 flex items-center justify-center text-xl shadow shrink-0 border border-white/60 group-hover:scale-105 transition-transform">
+              ✨
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-amber-300">
+                  プロドラマー唸る！神機能プレゼンテーション
+                </span>
+                <span className="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black text-[9px] uppercase tracking-wider animate-pulse shadow-sm">
+                  NEW
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-300">
+                ハイハット共鳴・グルーヴ診断・リムショット・部屋鳴り音響を体感 ➜
+              </p>
+            </div>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-xs font-black shadow transition shrink-0 flex items-center gap-1 group-hover:scale-105">
+            <span>見る</span>
+            <span>⚡</span>
+          </div>
+        </button>
+      )}
 
       {/* RPG TRAINING & COACH PROMOTION BANNER (プレイヤーを初級レッスンへ惹きつける誘導カード) */}
       {onOpenRPGModal && (

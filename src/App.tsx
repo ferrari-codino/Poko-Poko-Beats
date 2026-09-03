@@ -13,6 +13,7 @@ import { AuthModal } from './components/AuthModal';
 import { GitHubModal } from './components/GitHubModal';
 import { CourseSelectModal } from './components/CourseSelectModal';
 import { RPGCourseModal } from './components/RPGCourseModal';
+import { ShowcaseModal } from './components/ShowcaseModal';
 import { AdminLockScreen } from './components/AdminLockScreen';
 import { AdminPanelScreen } from './components/AdminPanelScreen';
 import { DeviceGateScreen } from './components/DeviceGateScreen';
@@ -51,6 +52,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState<boolean>(false);
   const [isCourseModalOpen, setIsCourseModalOpen] = useState<boolean>(false);
+  const [isShowcaseModalOpen, setIsShowcaseModalOpen] = useState<boolean>(false);
   const [courseState, setCourseState] = useState<CourseState | null>(null);
   const [existingUsers, setExistingUsers] = useState<any[]>([]);
 
@@ -370,6 +372,7 @@ export default function App() {
             onOpenGitHub={() => setIsGitHubModalOpen(true)}
             onOpenAdmin={() => setScreen('admin')}
             onOpenCourseModal={() => setIsCourseModalOpen(true)}
+            onOpenShowcase={() => setIsShowcaseModalOpen(true)}
             onOpenRPGModal={() => {
               setRpgProgress(loadRPGProgress());
               setIsRPGModalOpen(true);
@@ -497,6 +500,16 @@ export default function App() {
           }}
           rpgProgress={rpgProgress}
           onStartLevel={handleStartRPGLevel}
+        />
+
+        {/* Poko-poko Beats Spectacular Showcase Presentation Modal */}
+        <ShowcaseModal
+          isOpen={isShowcaseModalOpen}
+          onClose={() => setIsShowcaseModalOpen(false)}
+          onStartPlaying={() => {
+            setIsShowcaseModalOpen(false);
+            setScreen('select');
+          }}
         />
       </main>
     </div>

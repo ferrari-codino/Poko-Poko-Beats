@@ -235,6 +235,57 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
         </div>
 
+        {/* 4. ROOM AMBIENCE SIMULATOR PRESET */}
+        <div className="bg-slate-900/90 p-4 rounded-3xl border border-indigo-500/30 shadow-lg space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-black text-indigo-300">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span>🎙️ スタジオ音響ルーム・シミュレータ (空間リバーブ)</span>
+            </div>
+            <span className="text-[10px] text-amber-300 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
+              プロ仕様
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { id: 'dead', title: '70s Dead', desc: '超タイトな密閉ブース', icon: '🎙️' },
+              { id: 'vintage', title: 'Vintage Room', desc: '温かいスタジオ初期反射音', icon: '📻' },
+              { id: 'arena', title: 'Live Arena', desc: 'スタジアム級の壮大リバーブ', icon: '🏟️' },
+            ].map((p) => {
+              const isSelected = (current.ambiencePreset || 'vintage') === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    const preset = p.id as any;
+                    setCurrent({ ...current, ambiencePreset: preset });
+                    drumSynth.setAmbiencePreset(preset);
+                    drumSynth.playDrum('snare');
+                  }}
+                  className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+                    isSelected
+                      ? 'border-indigo-400 bg-indigo-500/20 shadow-md ring-1 ring-indigo-400'
+                      : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-lg">{p.icon}</span>
+                    <span className="text-xs font-black text-white">{p.title}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 leading-tight">{p.desc}</span>
+                  {isSelected && (
+                    <span className="text-[9px] font-bold text-indigo-300 mt-2 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> 選択中 (試聴発音)
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* VOLUME MIXER */}
         <div className="bg-slate-900/90 p-4 rounded-3xl border border-slate-800 space-y-3">
           <div className="text-xs font-bold text-slate-200 mb-1 flex items-center gap-1.5">

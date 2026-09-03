@@ -44,6 +44,17 @@ export const DrumSet: React.FC<DrumSetProps> = ({
   const [wobbleRotations, setWobbleRotations] = useState<Record<string, number>>({});
   const [particles, setParticles] = useState<Particle[]>([]);
   const [kickPulse, setKickPulse] = useState(false);
+
+  // 5 Musician Pro Features State
+  const [membraneWaves, setMembraneWaves] = useState<Record<string, number>>({});
+  const [cymbalShimmers, setCymbalShimmers] = useState<Record<string, number>>({});
+  const [subBassShockwave, setSubBassShockwave] = useState(false);
+  const [isRimshotActive, setIsRimshotActive] = useState(false);
+  const [isChokedActive, setIsChokedActive] = useState(false);
+  const [leftStickStrike, setLeftStickStrike] = useState(false);
+  const [rightStickStrike, setRightStickStrike] = useState(false);
+  const [ambiencePreset, setAmbiencePresetState] = useState<'dead' | 'vintage' | 'arena'>('vintage');
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Check if a part is unlocked in current RPG/training session
@@ -56,7 +67,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
   );
 
   // Spawn visual sparkle particles when drum is struck
-  const spawnHitParticles = useCallback((part: DrumPartId, clientX?: number, clientY?: number) => {
+  const spawnHitParticles = useCallback((part: DrumPartId, clientX?: number, clientY?: number, isRim?: boolean) => {
     const config = DRUM_PARTS[part];
     let originX = window.innerWidth / 2;
     let originY = window.innerHeight / 2;
@@ -67,27 +78,28 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       originY = clientY - rect.top;
     }
 
-    const cuteEmojis = ['⭐', '✨', '⚡', '💫', '🔥'];
+    const cuteEmojis = isRim ? ['💥', '⚡', '✨', '🔥', '⭐'] : ['⭐', '✨', '⚡', '💫', '🔥'];
+    const count = isRim ? 12 : 7;
     const newParticles: Particle[] = [];
-    for (let i = 0; i < 7; i++) {
-      const angle = (Math.PI * 2 * i) / 7 + (Math.random() - 0.5);
-      const speed = 3.0 + Math.random() * 4.5;
-      const isEmoji = i === 0;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5);
+      const speed = (isRim ? 4.5 : 3.0) + Math.random() * (isRim ? 6.0 : 4.5);
+      const isEmoji = i === 0 || (isRim && i === 1);
       newParticles.push({
         id: Date.now() + Math.random() + i,
         x: originX,
         y: originY,
-        color: config.color,
+        color: isRim ? '#fbbf24' : config.color,
         emoji: isEmoji ? cuteEmojis[Math.floor(Math.random() * cuteEmojis.length)] : undefined,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 1.5,
-        size: isEmoji ? 18 : 5 + Math.random() * 6,
+        size: isEmoji ? 20 : 5 + Math.random() * (isRim ? 9 : 6),
         alpha: 1,
         rotation: Math.random() * 360,
       });
     }
 
-    setParticles((prev) => [...prev.slice(-25), ...newParticles]);
+    setParticles((prev) => [...prev.slice(-30), ...newParticles]);
   }, []);
 
   // Particle physics update loop
@@ -111,9 +123,9 @@ export const DrumSet: React.FC<DrumSetProps> = ({
     return () => clearInterval(interval);
   }, [particles.length]);
 
-  // Handle striking a drum pad
+  // Handle striking a drum pad (with authentic rimshot, choke & membrane physics)
   const handleHit = useCallback(
-    (part: DrumPartId, e?: React.PointerEvent | React.TouchEvent | React.MouseEvent) => {
+    (part: DrumPartId, e?: React.PointerEvent | React.TouchEvent | React.MouseEvent, forceRimshot?: boolean) => {
       // If part is locked in training curriculum, do not trigger
       if (!isPartUnlocked(part)) {
         return;
@@ -122,14 +134,60 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       // Haptic feedback
       if (hapticsEnabled && typeof navigator !== 'undefined' && navigator.vibrate) {
         try {
-          navigator.vibrate(24);
+          navigator.vibrate(forceRimshot ? 35 : 24);
         } catch {}
       }
 
-      // Play synthesized acoustic sound
-      drumSynth.playDrum(part);
-
       const now = performance.now();
+
+      // Check for Snare Open Rimshot: forceRimshot OR click on top 28% hoop rim
+      let isRim = false;
+      if (part === 'snare') {
+        if (forceRimshot) {
+          isRim = true;
+        } else if (e && 'currentTarget' in e && e.currentTarget) {
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const clientY = 'clientY' in e ? e.clientY : 0;
+          if (clientY > 0 && (clientY - rect.top) / rect.height < 0.28) {
+            isRim = true;
+          }
+        }
+      }
+
+      // Play synthesized acoustic sound with real-time physics
+      if (isRim) {
+        drumSynth.playRimshot();
+        setIsRimshotActive(true);
+        setTimeout(() => setIsRimshotActive(false), 240);
+      } else if (part === 'hihatClosed') {
+        drumSynth.playHiHatClosed();
+        setIsChokedActive(true);
+        setTimeout(() => setIsChokedActive(false), 200);
+      } else {
+        drumSynth.playDrum(part);
+      }
+
+      // 5. Drumhead Bessel membrane wave ripple (for snare, toms, kick)
+      const isDrumHead = part === 'snare' || part === 'kick' || part === 'tomHigh' || part === 'tomLow' || part === 'tomFloor';
+      if (isDrumHead) {
+        setMembraneWaves((prev) => ({ ...prev, [part]: Date.now() }));
+      }
+
+      // 5. Cymbal metallic lathe shimmer (for crash, ride, hihats)
+      const isCymbalPart = part === 'crash' || part === 'ride' || part === 'hihatClosed' || part === 'hihatOpen';
+      if (isCymbalPart) {
+        setCymbalShimmers((prev) => ({ ...prev, [part]: Date.now() }));
+      }
+
+      // Virtual Drumsticks Dynamic Strike & Rebound Animation
+      const isLeftHand = part === 'snare' || part === 'hihatClosed' || part === 'hihatOpen' || part === 'crash' || part === 'tomHigh';
+      if (isLeftHand) {
+        setLeftStickStrike(true);
+        setTimeout(() => setLeftStickStrike(false), 180);
+      } else {
+        setRightStickStrike(true);
+        setTimeout(() => setRightStickStrike(false), 180);
+      }
 
       // Trigger realistic physical wobble for cymbals or head depression for drums
       setPressedParts((prev) => ({ ...prev, [part]: true }));
@@ -138,7 +196,11 @@ export const DrumSet: React.FC<DrumSetProps> = ({
 
       if (part === 'kick') {
         setKickPulse(true);
-        setTimeout(() => setKickPulse(false), 140);
+        setSubBassShockwave(true);
+        setTimeout(() => {
+          setKickPulse(false);
+          setSubBassShockwave(false);
+        }, 180);
       }
 
       setTimeout(() => {
@@ -146,7 +208,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         setWobbleRotations((prev) => ({ ...prev, [part]: 0 }));
       }, 160);
 
-      // Notify parent game loop
+      // Notify parent game loop (always notify 'snare' even if rimshot, so game scores it flawlessly)
       onDrumHit(part, now);
 
       // Particle sparkles
@@ -156,60 +218,66 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         cx = e.clientX;
         cy = e.clientY;
       }
-      spawnHitParticles(part, cx, cy);
+      spawnHitParticles(part, cx, cy, isRim);
     },
     [hapticsEnabled, onDrumHit, isPartUnlocked, spawnHitParticles]
   );
 
   // Keyboard controls listener
   useEffect(() => {
-    const keyMap: Record<string, DrumPartId> = {
-      ' ': 'kick',
-      b: 'kick',
-      B: 'kick',
-      s: 'snare',
-      S: 'snare',
-      d: 'snare',
-      D: 'snare',
-      h: 'hihatClosed',
-      H: 'hihatClosed',
-      j: 'hihatClosed',
-      J: 'hihatClosed',
-      o: 'hihatOpen',
-      O: 'hihatOpen',
-      k: 'hihatOpen',
-      K: 'hihatOpen',
-      t: 'tomHigh',
-      T: 'tomHigh',
-      y: 'tomLow',
-      Y: 'tomLow',
-      f: 'tomFloor',
-      F: 'tomFloor',
-      g: 'tomFloor',
-      G: 'tomFloor',
-      c: 'crash',
-      C: 'crash',
-      r: 'ride',
-      R: 'ride',
+    const keyMap: Record<string, { part: DrumPartId; rimshot?: boolean; choke?: boolean }> = {
+      ' ': { part: 'kick' },
+      b: { part: 'kick' },
+      B: { part: 'kick' },
+      s: { part: 'snare' },
+      S: { part: 'snare' },
+      d: { part: 'snare', rimshot: true }, // [D] or [R] triggers Authentic Open Rimshot!
+      D: { part: 'snare', rimshot: true },
+      r: { part: 'snare', rimshot: true },
+      R: { part: 'snare', rimshot: true },
+      h: { part: 'hihatClosed' },
+      H: { part: 'hihatClosed' },
+      j: { part: 'hihatClosed' },
+      J: { part: 'hihatClosed' },
+      p: { part: 'hihatClosed', choke: true }, // [P] triggers Hi-Hat Pedal Choke!
+      P: { part: 'hihatClosed', choke: true },
+      o: { part: 'hihatOpen' },
+      O: { part: 'hihatOpen' },
+      k: { part: 'hihatOpen' },
+      K: { part: 'hihatOpen' },
+      t: { part: 'tomHigh' },
+      T: { part: 'tomHigh' },
+      y: { part: 'tomLow' },
+      Y: { part: 'tomLow' },
+      f: { part: 'tomFloor' },
+      F: { part: 'tomFloor' },
+      g: { part: 'tomFloor' },
+      G: { part: 'tomFloor' },
+      c: { part: 'crash' },
+      C: { part: 'crash' },
+      v: { part: 'ride' },
+      V: { part: 'ride' },
     };
 
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.repeat) return;
-      let part = keyMap[ev.key];
+      const entry = keyMap[ev.key];
+      if (!entry) return;
+
+      let part = entry.part;
       // In compact (toddler 4-pad) mode, redirect toms to snare, ride to crash, open-hat to closed-hat
-      if (drumLayout === 'compact' && part) {
+      if (drumLayout === 'compact') {
         if (part === 'tomHigh' || part === 'tomLow' || part === 'tomFloor') part = 'snare';
         if (part === 'ride') part = 'crash';
         if (part === 'hihatOpen') part = 'hihatClosed';
       }
-      if (part) {
-        handleHit(part);
-      }
+
+      handleHit(part, undefined, entry.rimshot);
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleHit]);
+  }, [handleHit, drumLayout]);
 
   // Helper to render 3D-angled drum or cymbal pad
   const render3DPad = (
@@ -288,6 +356,64 @@ export const DrumSet: React.FC<DrumSetProps> = ({
               PREPARE!
             </span>
           </div>
+        )}
+
+        {/* 1. HI-HAT CHOKE POPUP BADGE */}
+        {part === 'hihatClosed' && isChokedActive && (
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-pulse whitespace-nowrap">
+            <div className="px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 font-black text-[9px] shadow-xl border border-cyan-400 flex items-center gap-1">
+              <span>🦶</span>
+              <span>CHOKE (消音)</span>
+            </div>
+          </div>
+        )}
+
+        {/* 3. SNARE TOP CHROME HOOP: OPEN RIMSHOT TARGET ZONE */}
+        {isSnare && (
+          <div
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleHit('snare', e, true);
+            }}
+            className="absolute -top-1.5 inset-x-2 h-5 rounded-t-full bg-gradient-to-b from-amber-300/40 via-white/20 to-transparent cursor-pointer z-40 hover:bg-amber-400/30 active:bg-amber-400/60 transition-colors flex items-center justify-center group/rim"
+            title="オープン・リムショット打面 (フープ同時叩き)"
+          >
+            <span className="text-[7px] font-mono font-black text-amber-200/90 tracking-tighter bg-black/70 px-1 py-0.2 rounded border border-amber-400/40 opacity-75 group-hover/rim:opacity-100 transition-opacity">
+              RIMSHOT [R/D]
+            </span>
+          </div>
+        )}
+
+        {/* 3. SNARE OPEN RIMSHOT CELEBRATION BADGE */}
+        {isSnare && isRimshotActive && (
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce whitespace-nowrap">
+            <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-rose-500 to-amber-300 text-slate-950 font-black text-[9px] shadow-xl border border-amber-300 flex items-center gap-1">
+              <span>💥</span>
+              <span>OPEN RIMSHOT!</span>
+            </div>
+          </div>
+        )}
+
+        {/* 5. PHYSICAL DRUMHEAD BESSEL MEMBRANE VIBRATION */}
+        {!isCymbal && membraneWaves[part] && (
+          <div
+            key={membraneWaves[part]}
+            className="absolute inset-1.5 rounded-full border-2 border-white/80 pointer-events-none animate-membrane-ripple z-30"
+          />
+        )}
+
+        {/* 5. PHYSICAL METALLIC CYMBAL LATHE SHIMMER */}
+        {isCymbal && cymbalShimmers[part] && (
+          <div
+            key={cymbalShimmers[part]}
+            className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-300/30 via-white/40 to-transparent pointer-events-none animate-cymbal-shimmer z-30"
+          />
+        )}
+
+        {/* 5. SUB-BASS AIR PRESSURE SHOCKWAVE FROM KICK PORT HOLE */}
+        {isKick && subBassShockwave && (
+          <div className="absolute right-2 bottom-1 w-12 h-12 rounded-full border-2 border-cyan-400/90 pointer-events-none animate-kick-sub-shockwave z-40" />
         )}
 
         {/* HIT GLOW BURST HALO */}
@@ -727,6 +853,88 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           </div>
         ))}
       </div>
+
+      {/* 3. VIRTUAL HICKORY DRUMSTICKS WITH PHYSICAL STRIKE & REBOUND */}
+      <div className="absolute inset-x-0 top-0 h-28 pointer-events-none z-35 overflow-visible">
+        {/* Left Hand Stick (Hickory Maple Wood with Tapered Tip) */}
+        <div
+          className={`absolute left-[28%] sm:left-[32%] top-2 w-2 sm:w-2.5 h-20 sm:h-24 origin-top transition-transform duration-75 ${
+            leftStickStrike ? 'animate-stick-strike' : ''
+          }`}
+          style={{
+            transform: leftStickStrike ? undefined : 'rotate(-22deg)',
+            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
+          }}
+        >
+          <div className="w-full h-full bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 rounded-full border border-amber-400/40 relative">
+            {/* Acorn Wood Tip */}
+            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-100 border border-amber-300 shadow-sm" />
+            {/* Stick Shoulder Ring */}
+            <div className="absolute bottom-6 inset-x-0 h-0.5 bg-amber-500/40" />
+          </div>
+        </div>
+
+        {/* Right Hand Stick (Hickory Maple Wood with Tapered Tip) */}
+        <div
+          className={`absolute right-[28%] sm:right-[32%] top-2 w-2 sm:w-2.5 h-20 sm:h-24 origin-top transition-transform duration-75 ${
+            rightStickStrike ? 'animate-stick-strike' : ''
+          }`}
+          style={{
+            transform: rightStickStrike ? undefined : 'rotate(22deg)',
+            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
+          }}
+        >
+          <div className="w-full h-full bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 rounded-full border border-amber-400/40 relative">
+            {/* Acorn Wood Tip */}
+            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-100 border border-amber-300 shadow-sm" />
+            {/* Stick Shoulder Ring */}
+            <div className="absolute bottom-6 inset-x-0 h-0.5 bg-amber-500/40" />
+          </div>
+        </div>
+      </div>
+
+      {/* 4. STUDIO ROOM AMBIENCE SELECTOR HUD */}
+      <div className="absolute top-2 right-2 z-40 flex items-center gap-1 bg-slate-950/85 backdrop-blur-sm px-2 py-1 rounded-xl border border-slate-700/80 shadow-md">
+        <span className="text-[9px] font-mono text-amber-400 font-black flex items-center gap-0.5 mr-0.5">
+          <span>🎙️</span>
+          <span className="hidden sm:inline">ROOM:</span>
+        </span>
+        {(['dead', 'vintage', 'arena'] as const).map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAmbiencePresetState(preset);
+              drumSynth.setAmbiencePreset(preset);
+            }}
+            className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all ${
+              ambiencePreset === preset
+                ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+            title={`スタジオ音響切り替え: ${preset}`}
+          >
+            {preset === 'dead' ? 'Dead' : preset === 'vintage' ? 'Vintage' : 'Arena'}
+          </button>
+        ))}
+      </div>
+
+      {/* 1. HI-HAT PEDAL CHOKE FOOTBOARD BUTTON */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          drumSynth.chokeHiHat();
+          setIsChokedActive(true);
+          setTimeout(() => setIsChokedActive(false), 220);
+        }}
+        className="absolute bottom-2 left-3 z-40 px-2 py-1 rounded-xl bg-slate-950/90 hover:bg-slate-800 active:scale-95 border border-cyan-500/50 text-cyan-300 text-[9px] font-black tracking-tight shadow-md flex items-center gap-1 transition"
+        title="ハイハットの余韻を消音（チョーク・ペダル） [P]"
+      >
+        <span>🦶</span>
+        <span>CHOKE [P]</span>
+      </button>
 
       {/* AUTHENTIC DRUM KIT ARRANGEMENTS ACCORDING TO USER SETTING */}
       {drumLayout === 'compact' ? (
