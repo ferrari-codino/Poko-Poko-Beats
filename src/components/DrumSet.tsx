@@ -3,7 +3,7 @@ import { DrumPartId, DrumLayoutType, PadScale, CustomDrumKit, DeviceMode } from 
 import { DRUM_PARTS } from '../data/drumConfig';
 import { drumSynth } from '../audio/drumSynth';
 import { SHELL_MATERIALS, HEAD_STYLES, HARDWARE_FINISHES, CYMBAL_FINISHES } from '../data/customDrumKits';
-import { Lock } from 'lucide-react';
+import { Lock, Sliders, Volume2, Info, X, Sparkles } from 'lucide-react';
 
 interface DrumSetProps {
   onDrumHit: (part: DrumPartId, hitTimestamp: number) => void;
@@ -1281,6 +1281,200 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           </div>
         </div>
       </div>
+
+      {/* PRO ACOUSTIC CONTROLS & TECHNIQUE HUD (Top-Left) */}
+      <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-sm px-2 py-1 rounded-xl border border-slate-700/80 shadow-md">
+        {/* Moongel Damper Toggle */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleMoongel();
+          }}
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all ${
+            moongelEnabled
+              ? 'bg-cyan-500 text-slate-950 font-black shadow-[0_0_8px_rgba(34,211,238,0.7)]'
+              : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-800 border border-slate-700/60'
+          }`}
+          title="Moongel ミュートダンパー着脱 (倍音をタイトに引き締め)"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-sm" />
+          <span>GEL {moongelEnabled ? 'ON' : 'OFF'}</span>
+        </button>
+
+        {/* Sympathetic Snare Wire Buzz Toggle */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleSympatheticBuzz();
+          }}
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-all ${
+            sympatheticBuzzEnabled
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
+              : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800 border border-slate-800'
+          }`}
+          title="スネアスナッピー共鳴 (キック・タム打撃時のスナッピー共振音)"
+        >
+          <span>⚡</span>
+          <span className="hidden sm:inline">BUZZ</span>
+        </button>
+
+        {/* Pro Tech Details Modal Trigger */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setProTuningOpen((prev) => !prev);
+          }}
+          className="px-1.5 py-0.5 rounded-md text-[9px] font-bold text-amber-300 hover:bg-slate-800 flex items-center gap-0.5"
+          title="プロ奏法ショートカットとアコースティック設定"
+        >
+          <Sliders className="w-3 h-3 text-amber-400" />
+          <span className="hidden sm:inline font-mono">PRO TECH</span>
+        </button>
+      </div>
+
+      {/* PRO TECHNIQUES & ACOUSTIC SOUND DETAILS MODAL */}
+      {proTuningOpen && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-x-2 sm:inset-x-8 top-12 max-h-[85%] overflow-y-auto z-50 bg-slate-900/95 backdrop-blur-md rounded-2xl border border-amber-500/40 p-4 shadow-2xl text-slate-200 animate-in fade-in zoom-in-95 duration-150"
+        >
+          <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-700/80">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                  本格アコースティックドラム奏法 & 物理音響
+                </h4>
+                <p className="text-[10px] text-slate-400 font-mono">
+                  Real Drummer Physics Engine & Key Shortcuts
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProTuningOpen(false)}
+              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] mb-3">
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300 flex items-center gap-1">
+                  <span>💥</span> オープン・リムショット
+                </span>
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-200 font-mono text-[9px] border border-amber-500/30">
+                  D / R
+                </kbd>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                スネアのヘッドとフープ（枠）を同時に強打する鋭いアタック音。スネアの上部リムをクリックしても発音できます。
+              </p>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300 flex items-center gap-1">
+                  <span>🪵</span> クローズド・リムショット / クロススティック
+                </span>
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-200 font-mono text-[9px] border border-amber-500/30">
+                  X
+                </kbd>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                ボサノバやバラードで多用される、スティックをヘッドに乗せてリムをカツカツ叩く木質アコースティック打音。スネア左下の [STICK] エリアでも操作可能。
+              </p>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300 flex items-center gap-1">
+                  <span>🔔</span> ライドシンバル・ベル (カップ打音)
+                </span>
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-200 font-mono text-[9px] border border-amber-500/30">
+                  U
+                </kbd>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                ライド中央の盛り上がったドーム（カップ部）をスティックのショルダーで叩く高音の澄んだピング音。ライド中央のドーム直接クリックでも発音可能。
+              </p>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300 flex items-center gap-1">
+                  <span>✋</span> クラッシュシンバル・ハンドチョーク
+                </span>
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-200 font-mono text-[9px] border border-amber-500/30">
+                  Z
+                </kbd>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                シンバルの縁を手でギュッと掴んで余韻を一瞬で断ち切るキメ技（ミュート奏法）。クラッシュ右上の [CHOKE] ボタンでも即時発動。
+              </p>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300 flex items-center gap-1">
+                  <span>🦶</span> ハイハット・ペダルチョーク
+                </span>
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-200 font-mono text-[9px] border border-amber-500/30">
+                  P
+                </kbd>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                オープンハイハットの余韻をフットペダルを踏み込んで「チッ」と瞬時にミュートする実機ペダル動作。
+              </p>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-cyan-300 flex items-center gap-1">
+                  <span>🟦</span> Moongel ダンパー (ジェルミュート)
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleMoongel}
+                  className="px-2 py-0.5 rounded bg-cyan-900/60 text-cyan-200 text-[9px] font-bold border border-cyan-400/50"
+                >
+                  {moongelEnabled ? '装着中 (ON)' : '取り外す (OFF)'}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight">
+                ドラマー必須のブルーのシリコン粘着ジェルパッド。打面の不要な倍音とリング音を吸収し、レコーディングスタジオのように引き締まったタイトサウンドにします。
+              </p>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-950/30 to-slate-950/80 border border-amber-500/20 flex items-center justify-between text-[10px]">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400">⚡</span>
+              <span className="text-slate-300">
+                <strong className="text-amber-300">スネア共鳴（シンパセティック・バズ）:</strong> バスドラムやタムを叩いた空気振動で、スネア裏のスナッピー線が微小にジジッと震えるアコースティック現象を忠実にシミュレート。
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleSympatheticBuzz}
+              className={`px-2 py-0.5 rounded text-[9px] font-bold border transition ${
+                sympatheticBuzzEnabled
+                  ? 'bg-amber-500 text-slate-950 border-amber-400'
+                  : 'bg-slate-800 text-slate-400 border-slate-700'
+              }`}
+            >
+              {sympatheticBuzzEnabled ? '有効 (ON)' : '無効 (OFF)'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 4. STUDIO ROOM AMBIENCE SELECTOR HUD */}
       <div className="absolute top-2 right-2 z-40 flex items-center gap-1 bg-slate-950/85 backdrop-blur-sm px-2 py-1 rounded-xl border border-slate-700/80 shadow-md">

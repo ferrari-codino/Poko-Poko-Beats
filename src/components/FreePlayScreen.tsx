@@ -301,8 +301,19 @@ export const FreePlayScreen: React.FC<FreePlayScreenProps> = ({ settings, onBack
       </div>
 
       {/* FOOTER TIP */}
-      <div className="text-center text-[11px] text-slate-500 py-1">
-        好きなパートをタップしてリアルなドラム演奏を練習できます。
+      <div className="text-center text-[11px] text-slate-400 py-1 space-x-1">
+        <span className="text-amber-400 font-bold">✨プロドラム奏法対応:</span>
+        <span>オープンリムショット [D/R]</span>
+        <span>・</span>
+        <span>クロススティック [X]</span>
+        <span>・</span>
+        <span>ライドベル [U]</span>
+        <span>・</span>
+        <span>クラッシュ消音 [Z]</span>
+        <span>・</span>
+        <span>ハイハット消音 [P]</span>
+        <span>・</span>
+        <span>Moongelミュート [GEL]</span>
       </div>
     </div>
   );
