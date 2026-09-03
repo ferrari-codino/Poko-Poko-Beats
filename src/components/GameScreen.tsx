@@ -200,11 +200,35 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     };
   }, [song, difficulty, rpgLevel, activeBpm]);
 
+  // Dynamic hit detection window & miss threshold calculation
+  const getTimingWindows = useCallback(() => {
+    if (rpgLevel === 1) {
+      return { hitTolerance: 0.35, missThreshold: 0.38, perfect: 0.18, great: 0.28, good: 0.35 };
+    }
+    if (rpgLevel && rpgLevel <= 5) {
+      return { hitTolerance: 0.26, missThreshold: 0.29, perfect: 0.10, great: 0.18, good: 0.26 };
+    }
+    if (rpgLevel && rpgLevel <= 15) {
+      return { hitTolerance: 0.22, missThreshold: 0.25, perfect: 0.08, great: 0.15, good: 0.22 };
+    }
+    // By difficulty
+    if (difficulty === 'easy') {
+      return { hitTolerance: 0.26, missThreshold: 0.29, perfect: 0.09, great: 0.17, good: 0.26 };
+    }
+    if (difficulty === 'normal') {
+      return { hitTolerance: 0.20, missThreshold: 0.23, perfect: 0.065, great: 0.13, good: 0.20 };
+    }
+    if (difficulty === 'hard') {
+      return { hitTolerance: 0.16, missThreshold: 0.18, perfect: 0.048, great: 0.095, good: 0.16 };
+    }
+    // expert / master
+    return { hitTolerance: 0.13, missThreshold: 0.15, perfect: 0.038, great: 0.075, good: 0.13 };
+  }, [rpgLevel, difficulty]);
+
   // Check for missed notes and update visual approach glow
   const updateNotesAndGlows = useCallback(
     (time: number) => {
-      // Level 1 provides a very forgiving missThreshold so anyone clears on first try
-      const missThreshold = rpgLevel === 1 ? 0.35 : (rpgLevel && rpgLevel <= 5 ? 0.25 : 0.14);
+      const { missThreshold } = getTimingWindows();
       const effectiveTime = time + settings.audioOffsetMs / 1000;
 
       const updatedGlows: Record<DrumPartId, { glowIntensity: number; approachProgress: number; noteId?: string }> = {
@@ -305,7 +329,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         });
       }
     },
-    [approachWindow, settings.audioOffsetMs, rpgLevel, aiBattleEnabled, selectedAILevel]
+    [approachWindow, settings.audioOffsetMs, settings.drumLayout, rpgLevel, aiBattleEnabled, selectedAILevel, getTimingWindows]
   );
 
   const triggerFeedback = (type: JudgmentType, part: DrumPartId, offsetMs?: number) => {
@@ -453,8 +477,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     (part: DrumPartId, hitTime: number) => {
       const currentAudioTime = musicEngine.getCurrentTime() + settings.audioOffsetMs / 1000;
 
-      // Generous hit detection window for beginners (Level 1: 0.35s)
-      const hitTolerance = rpgLevel === 1 ? 0.35 : (rpgLevel && rpgLevel <= 5 ? 0.24 : 0.15);
+      const { hitTolerance, perfect, great, good } = getTimingWindows();
       const isCompact = settings.drumLayout === 'compact';
       const isPartMatch = (notePart: DrumPartId, hitPart: DrumPartId) => {
         if (notePart === hitPart) return true;
@@ -462,6 +485,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           if (hitPart === 'snare' && (notePart === 'tomHigh' || notePart === 'tomLow' || notePart === 'tomFloor')) return true;
           if (hitPart === 'hihatClosed' && notePart === 'hihatOpen') return true;
           if (hitPart === 'crash' && notePart === 'ride') return true;
+        } else {
+          // Hi-hats open & closed flexibility across modes
+          if ((notePart === 'hihatClosed' && hitPart === 'hihatOpen') || (notePart === 'hihatOpen' && hitPart === 'hihatClosed')) return true;
+          // Crash & ride interchangeability on Easy
+          if (difficulty === 'easy' && ((notePart === 'crash' && hitPart === 'ride') || (notePart === 'ride' && hitPart === 'crash'))) return true;
         }
         return false;
       };
@@ -479,32 +507,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         const diffMs = Math.round(diffSec * 1000);
         const absDiff = Math.abs(diffSec);
 
-        let judgment: JudgmentType = 'MISS';
-        if (rpgLevel === 1) {
-          // Level 1: super friendly tolerance so first-time players always succeed!
-          if (absDiff <= 0.18) {
-            judgment = 'PERFECT';
-          } else if (absDiff <= 0.28) {
-            judgment = 'GREAT';
-          } else {
-            judgment = 'GOOD';
-          }
-        } else if (rpgLevel && rpgLevel <= 5) {
-          if (absDiff <= 0.08) {
-            judgment = 'PERFECT';
-          } else if (absDiff <= 0.15) {
-            judgment = 'GREAT';
-          } else {
-            judgment = 'GOOD';
-          }
-        } else {
-          if (absDiff <= 0.045) {
-            judgment = 'PERFECT';
-          } else if (absDiff <= 0.09) {
-            judgment = 'GREAT';
-          } else if (absDiff <= 0.14) {
-            judgment = 'GOOD';
-          }
+        let judgment: JudgmentType = 'GOOD';
+        if (absDiff <= perfect) {
+          judgment = 'PERFECT';
+        } else if (absDiff <= great) {
+          judgment = 'GREAT';
+        } else if (absDiff <= good) {
+          judgment = 'GOOD';
         }
 
         targetNote.hit = true;
@@ -515,7 +524,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         handleScoreUpdate(judgment, diffMs);
       }
     },
-    [settings.audioOffsetMs, rpgLevel]
+    [settings.audioOffsetMs, settings.drumLayout, rpgLevel, difficulty, getTimingWindows]
   );
 
   const handleSongComplete = () => {

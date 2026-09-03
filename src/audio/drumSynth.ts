@@ -70,8 +70,8 @@ class DrumSynthEngine {
       this.generateNoiseBuffer();
     }
 
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
   }
 

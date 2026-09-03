@@ -100,6 +100,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
   }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastHitTimeRef = useRef<Record<string, number>>({});
 
   // Check if a part is unlocked in current RPG/training session
   const isPartUnlocked = useCallback(
@@ -174,11 +175,6 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       e?: React.PointerEvent | React.TouchEvent | React.MouseEvent,
       options?: { forceRimshot?: boolean; forceCrossStick?: boolean; forceRideBell?: boolean; forceChoke?: boolean }
     ) => {
-      // If part is locked in training curriculum, do not trigger
-      if (!isPartUnlocked(part)) {
-        return;
-      }
-
       const forceRimshot = options?.forceRimshot;
       const forceCrossStick = options?.forceCrossStick;
       const forceRideBell = options?.forceRideBell;
@@ -436,16 +432,32 @@ export const DrumSet: React.FC<DrumSetProps> = ({
     const cymbalTilt = isPressed ? 18 : 0;
     const drumCompress = isPressed ? 0.94 : 1.0;
 
+    const triggerPadHit = (
+      e?: React.PointerEvent | React.TouchEvent | React.MouseEvent,
+      options?: { forceRimshot?: boolean; forceCrossStick?: boolean; forceRideBell?: boolean; forceChoke?: boolean }
+    ) => {
+      const now = Date.now();
+      const last = lastHitTimeRef.current[part] || 0;
+      if (now - last < 30) return;
+      lastHitTimeRef.current[part] = now;
+      handleHit(part, e, options);
+    };
+
     return (
       <div
         key={part}
         id={`drum-pad-${part}`}
         onPointerDown={(e) => {
-          e.preventDefault();
-          handleHit(part, e);
+          triggerPadHit(e);
+        }}
+        onTouchStart={(e) => {
+          triggerPadHit(e);
+        }}
+        onClick={(e) => {
+          triggerPadHit(e);
         }}
         className={`group relative flex items-center justify-center cursor-pointer select-none touch-none transition-all duration-75 ${
-          !isUnlocked ? 'opacity-35 grayscale pointer-events-none' : ''
+          !isUnlocked ? 'opacity-40 grayscale' : ''
         } ${customClass}`}
         style={{
           transform: `scale(${scaleFactor * drumCompress}) rotate(${wobble}deg) ${
@@ -500,8 +512,15 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           <div
             onPointerDown={(e) => {
               e.stopPropagation();
-              e.preventDefault();
-              handleHit('snare', e, true);
+              triggerPadHit(e, { forceRimshot: true });
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              triggerPadHit(e, { forceRimshot: true });
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerPadHit(e, { forceRimshot: true });
             }}
             className="absolute -top-1.5 inset-x-2 h-5 rounded-t-full bg-gradient-to-b from-amber-300/40 via-white/20 to-transparent cursor-pointer z-40 hover:bg-amber-400/30 active:bg-amber-400/60 transition-colors flex items-center justify-center group/rim"
             title="オープン・リムショット打面 (フープ同時叩き)"
@@ -515,9 +534,17 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {/* SNARE CROSS-STICK HOTSPOT (左下リム・スティック叩き) */}
         {isSnare && isUnlocked && (
           <div
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              triggerPadHit(e, { forceCrossStick: true });
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              triggerPadHit(e, { forceCrossStick: true });
+            }}
             onClick={(e) => {
               e.stopPropagation();
-              handleHit('snare', e, { forceCrossStick: true });
+              triggerPadHit(e, { forceCrossStick: true });
             }}
             className="absolute -bottom-1 left-1.5 w-10 h-5 rounded-bl-full bg-gradient-to-tr from-amber-700/60 via-amber-900/40 to-transparent cursor-pointer z-40 hover:brightness-125 active:brightness-150 transition-all flex items-center justify-center group/stick"
             title="クロススティック / クローズドリムショット [X]"
@@ -532,6 +559,14 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {part === 'crash' && isUnlocked && (
           <button
             type="button"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              handleHit('crash', e, { forceChoke: true });
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              handleHit('crash', e, { forceChoke: true });
+            }}
             onClick={(e) => {
               e.stopPropagation();
               handleHit('crash', e, { forceChoke: true });
@@ -657,10 +692,22 @@ export const DrumSet: React.FC<DrumSetProps> = ({
 
             {/* Raised Bell (立体カップ / ドーム - ライド時はクリックで鋭いベル音！) */}
             <div
+              onPointerDown={(e) => {
+                if (part === 'ride') {
+                  e.stopPropagation();
+                  triggerPadHit(e, { forceRideBell: true });
+                }
+              }}
+              onTouchStart={(e) => {
+                if (part === 'ride') {
+                  e.stopPropagation();
+                  triggerPadHit(e, { forceRideBell: true });
+                }
+              }}
               onClick={(e) => {
                 if (part === 'ride') {
                   e.stopPropagation();
-                  handleHit('ride', e, { forceRideBell: true });
+                  triggerPadHit(e, { forceRideBell: true });
                 }
               }}
               className={`relative w-[34%] h-[34%] rounded-full flex items-center justify-center border-2 shadow-lg transition-transform ${
@@ -881,6 +928,14 @@ export const DrumSet: React.FC<DrumSetProps> = ({
 
               {/* Iconic MoonGel Damper Pad (ドラマー御用達！ブルーのムーンジェルミュート - クリックで着脱可能！) */}
               <div
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  toggleMoongel();
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  toggleMoongel();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleMoongel();

@@ -282,20 +282,25 @@ export default function App() {
     } catch {}
   };
 
-  // Pre-initialize audio context on first interaction
+  // Pre-initialize and resume Web Audio AudioContext on any user interaction
   useEffect(() => {
-    const handleFirstUserTouch = () => {
+    const unlockAudio = () => {
       drumSynth.init();
-      window.removeEventListener('pointerdown', handleFirstUserTouch);
-      window.removeEventListener('keydown', handleFirstUserTouch);
+      const ctx = drumSynth.getContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
     };
 
-    window.addEventListener('pointerdown', handleFirstUserTouch, { once: true });
-    window.addEventListener('keydown', handleFirstUserTouch, { once: true });
+    const eventTypes = ['touchstart', 'touchend', 'pointerdown', 'mousedown', 'keydown', 'click'];
+    eventTypes.forEach((ev) => {
+      window.addEventListener(ev, unlockAudio, { passive: true });
+    });
 
     return () => {
-      window.removeEventListener('pointerdown', handleFirstUserTouch);
-      window.removeEventListener('keydown', handleFirstUserTouch);
+      eventTypes.forEach((ev) => {
+        window.removeEventListener(ev, unlockAudio);
+      });
     };
   }, []);
 
