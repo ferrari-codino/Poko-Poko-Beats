@@ -52,20 +52,52 @@ export const DrumSet: React.FC<DrumSetProps> = ({
   const currentCymbal = CYMBAL_FINISHES.find((c) => c.id === activeCustomKit?.cymbalFinish) || CYMBAL_FINISHES[0];
   const shellColor = activeCustomKit?.shellColor || '#2563eb';
 
+  // Synchronize Active Kit with Audio Engine for dynamic acoustic material synthesis
+  useEffect(() => {
+    if (activeCustomKit) {
+      drumSynth.setCustomKit(activeCustomKit);
+    }
+  }, [activeCustomKit]);
+
   const [pressedParts, setPressedParts] = useState<Record<string, boolean>>({});
   const [wobbleRotations, setWobbleRotations] = useState<Record<string, number>>({});
   const [particles, setParticles] = useState<Particle[]>([]);
   const [kickPulse, setKickPulse] = useState(false);
 
-  // 5 Musician Pro Features State
+  // Pro Drummer Realism States
   const [membraneWaves, setMembraneWaves] = useState<Record<string, number>>({});
   const [cymbalShimmers, setCymbalShimmers] = useState<Record<string, number>>({});
   const [subBassShockwave, setSubBassShockwave] = useState(false);
   const [isRimshotActive, setIsRimshotActive] = useState(false);
+  const [isCrossStickActive, setIsCrossStickActive] = useState(false);
+  const [isRideBellActive, setIsRideBellActive] = useState(false);
+  const [isCrashChokedActive, setIsCrashChokedActive] = useState(false);
   const [isChokedActive, setIsChokedActive] = useState(false);
   const [leftStickStrike, setLeftStickStrike] = useState(false);
   const [rightStickStrike, setRightStickStrike] = useState(false);
   const [ambiencePreset, setAmbiencePresetState] = useState<'dead' | 'vintage' | 'arena'>('vintage');
+
+  // Pro Acoustic Effects: Moongel Damper & Sympathetic Snare Wire Buzz
+  const [moongelEnabled, setMoongelEnabled] = useState(false);
+  const [sympatheticBuzzEnabled, setSympatheticBuzzEnabled] = useState(true);
+  const [snappyBuzzActive, setSnappyBuzzActive] = useState(false);
+  const [proTuningOpen, setProTuningOpen] = useState(false);
+
+  const toggleMoongel = useCallback(() => {
+    setMoongelEnabled((prev) => {
+      const next = !prev;
+      drumSynth.setMoongelDamping(next);
+      return next;
+    });
+  }, []);
+
+  const toggleSympatheticBuzz = useCallback(() => {
+    setSympatheticBuzzEnabled((prev) => {
+      const next = !prev;
+      drumSynth.setSympatheticBuzz(next);
+      return next;
+    });
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -135,48 +167,111 @@ export const DrumSet: React.FC<DrumSetProps> = ({
     return () => clearInterval(interval);
   }, [particles.length]);
 
-  // Handle striking a drum pad (with authentic rimshot, choke & membrane physics)
+  // Handle striking a drum pad (with authentic rimshot, cross-stick, ride bell, choke & membrane physics)
   const handleHit = useCallback(
-    (part: DrumPartId, e?: React.PointerEvent | React.TouchEvent | React.MouseEvent, forceRimshot?: boolean) => {
+    (
+      part: DrumPartId,
+      e?: React.PointerEvent | React.TouchEvent | React.MouseEvent,
+      options?: { forceRimshot?: boolean; forceCrossStick?: boolean; forceRideBell?: boolean; forceChoke?: boolean }
+    ) => {
       // If part is locked in training curriculum, do not trigger
       if (!isPartUnlocked(part)) {
+        return;
+      }
+
+      const forceRimshot = options?.forceRimshot;
+      const forceCrossStick = options?.forceCrossStick;
+      const forceRideBell = options?.forceRideBell;
+      const forceChoke = options?.forceChoke;
+
+      // Crash Choke Hand Mute action
+      if (part === 'crash' && forceChoke) {
+        drumSynth.chokeCrash();
+        setIsCrashChokedActive(true);
+        setTimeout(() => setIsCrashChokedActive(false), 240);
         return;
       }
 
       // Haptic feedback
       if (hapticsEnabled && typeof navigator !== 'undefined' && navigator.vibrate) {
         try {
-          navigator.vibrate(forceRimshot ? 35 : 24);
+          navigator.vibrate(forceRimshot ? 35 : forceCrossStick ? 18 : 24);
         } catch {}
       }
 
       const now = performance.now();
 
-      // Check for Snare Open Rimshot: forceRimshot OR click on top 28% hoop rim
+      // Check for Snare Open Rimshot vs Cross-Stick
       let isRim = false;
+      let isCross = false;
       if (part === 'snare') {
-        if (forceRimshot) {
+        if (forceCrossStick) {
+          isCross = true;
+        } else if (forceRimshot) {
           isRim = true;
         } else if (e && 'currentTarget' in e && e.currentTarget) {
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const clientY = 'clientY' in e ? e.clientY : 0;
-          if (clientY > 0 && (clientY - rect.top) / rect.height < 0.28) {
-            isRim = true;
+          const clientX = 'clientX' in e ? e.clientX : 0;
+          if (clientY > 0) {
+            const relY = (clientY - rect.top) / rect.height;
+            const relX = (clientX - rect.left) / rect.width;
+            if (relY < 0.28) {
+              isRim = true; // Top hoop rimshot
+            } else if (relY > 0.65 && relX < 0.35) {
+              isCross = true; // Bottom-left cross-stick wood hoop position
+            }
           }
         }
       }
 
-      // Play synthesized acoustic sound with real-time physics
-      if (isRim) {
+      // Check for Ride Bell: forceRideBell OR click within center 32% bell dome
+      let isRideBell = false;
+      if (part === 'ride') {
+        if (forceRideBell) {
+          isRideBell = true;
+        } else if (e && 'currentTarget' in e && e.currentTarget) {
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const clientY = 'clientY' in e ? e.clientY : 0;
+          const clientX = 'clientX' in e ? e.clientX : 0;
+          if (clientX > 0 && clientY > 0) {
+            const dx = clientX - (rect.left + rect.width / 2);
+            const dy = clientY - (rect.top + rect.height / 2);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < rect.width * 0.18) {
+              isRideBell = true;
+            }
+          }
+        }
+      }
+
+      // Play synthesized acoustic sound with material & pro physics
+      if (isCross) {
+        drumSynth.playCrossStick();
+        setIsCrossStickActive(true);
+        setTimeout(() => setIsCrossStickActive(false), 200);
+      } else if (isRim) {
         drumSynth.playRimshot();
         setIsRimshotActive(true);
         setTimeout(() => setIsRimshotActive(false), 240);
+      } else if (isRideBell) {
+        drumSynth.playRideBell();
+        setIsRideBellActive(true);
+        setTimeout(() => setIsRideBellActive(false), 240);
       } else if (part === 'hihatClosed') {
         drumSynth.playHiHatClosed();
         setIsChokedActive(true);
         setTimeout(() => setIsChokedActive(false), 200);
       } else {
         drumSynth.playDrum(part);
+      }
+
+      // Sympathetic Snare Buzz visualization on kick & toms
+      if (part === 'kick' || part === 'tomHigh' || part === 'tomLow' || part === 'tomFloor') {
+        if (sympatheticBuzzEnabled) {
+          setSnappyBuzzActive(true);
+          setTimeout(() => setSnappyBuzzActive(false), 160);
+        }
       }
 
       // 5. Drumhead Bessel membrane wave ripple (for snare, toms, kick)
@@ -220,7 +315,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         setWobbleRotations((prev) => ({ ...prev, [part]: 0 }));
       }, 160);
 
-      // Notify parent game loop (always notify 'snare' even if rimshot, so game scores it flawlessly)
+      // Notify parent game loop (always notify 'snare' even if rimshot or cross-stick, so game scores it flawlessly)
       onDrumHit(part, now);
 
       // Particle sparkles
@@ -232,12 +327,12 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       }
       spawnHitParticles(part, cx, cy, isRim);
     },
-    [hapticsEnabled, onDrumHit, isPartUnlocked, spawnHitParticles]
+    [hapticsEnabled, onDrumHit, isPartUnlocked, spawnHitParticles, sympatheticBuzzEnabled]
   );
 
   // Keyboard controls listener
   useEffect(() => {
-    const keyMap: Record<string, { part: DrumPartId; rimshot?: boolean; choke?: boolean }> = {
+    const keyMap: Record<string, { part: DrumPartId; rimshot?: boolean; crossStick?: boolean; rideBell?: boolean; choke?: boolean }> = {
       ' ': { part: 'kick' },
       b: { part: 'kick' },
       B: { part: 'kick' },
@@ -247,6 +342,8 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       D: { part: 'snare', rimshot: true },
       r: { part: 'snare', rimshot: true },
       R: { part: 'snare', rimshot: true },
+      x: { part: 'snare', crossStick: true }, // [X] triggers Cross-Stick!
+      X: { part: 'snare', crossStick: true },
       h: { part: 'hihatClosed' },
       H: { part: 'hihatClosed' },
       j: { part: 'hihatClosed' },
@@ -267,8 +364,12 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       G: { part: 'tomFloor' },
       c: { part: 'crash' },
       C: { part: 'crash' },
+      z: { part: 'crash', choke: true }, // [Z] triggers Crash Cymbal Choke (Hand Mute)!
+      Z: { part: 'crash', choke: true },
       v: { part: 'ride' },
       V: { part: 'ride' },
+      u: { part: 'ride', rideBell: true }, // [U] triggers Ride Bell (Cup)!
+      U: { part: 'ride', rideBell: true },
     };
 
     const onKeyDown = (ev: KeyboardEvent) => {
@@ -284,7 +385,21 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         if (part === 'hihatOpen') part = 'hihatClosed';
       }
 
-      handleHit(part, undefined, entry.rimshot);
+      if (entry.choke && part === 'crash') {
+        handleHit('crash', undefined, { forceChoke: true });
+      } else if (entry.choke) {
+        drumSynth.chokeHiHat();
+        setIsChokedActive(true);
+        setTimeout(() => setIsChokedActive(false), 200);
+      } else if (entry.crossStick) {
+        handleHit('snare', undefined, { forceCrossStick: true });
+      } else if (entry.rimshot) {
+        handleHit('snare', undefined, { forceRimshot: true });
+      } else if (entry.rideBell) {
+        handleHit('ride', undefined, { forceRideBell: true });
+      } else {
+        handleHit(part);
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -397,12 +512,74 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           </div>
         )}
 
+        {/* SNARE CROSS-STICK HOTSPOT (左下リム・スティック叩き) */}
+        {isSnare && isUnlocked && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHit('snare', e, { forceCrossStick: true });
+            }}
+            className="absolute -bottom-1 left-1.5 w-10 h-5 rounded-bl-full bg-gradient-to-tr from-amber-700/60 via-amber-900/40 to-transparent cursor-pointer z-40 hover:brightness-125 active:brightness-150 transition-all flex items-center justify-center group/stick"
+            title="クロススティック / クローズドリムショット [X]"
+          >
+            <span className="text-[7px] font-mono font-black text-amber-200/90 tracking-tighter bg-black/80 px-1 py-0.2 rounded border border-amber-600/40 opacity-75 group-hover/stick:opacity-100 transition-opacity">
+              STICK [X]
+            </span>
+          </div>
+        )}
+
+        {/* CRASH CHOKE BUTTON (手動シンバル掴み消音) */}
+        {part === 'crash' && isUnlocked && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHit('crash', e, { forceChoke: true });
+            }}
+            className="absolute -top-3 -right-2 px-1.5 py-0.5 rounded-md bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/50 shadow-lg text-[8px] font-bold z-40 flex items-center gap-0.5 active:scale-95 transition-all cursor-pointer"
+            title="クラッシュシンバルを手で掴んで消音 [Z]"
+          >
+            <span>✋</span>
+            <span>CHOKE [Z]</span>
+          </button>
+        )}
+
         {/* 3. SNARE OPEN RIMSHOT CELEBRATION BADGE */}
         {isSnare && isRimshotActive && (
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce whitespace-nowrap">
             <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-rose-500 to-amber-300 text-slate-950 font-black text-[9px] shadow-xl border border-amber-300 flex items-center gap-1">
               <span>💥</span>
               <span>OPEN RIMSHOT!</span>
+            </div>
+          </div>
+        )}
+
+        {/* 3. SNARE CROSS-STICK CELEBRATION BADGE */}
+        {isSnare && isCrossStickActive && (
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce whitespace-nowrap">
+            <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400 text-slate-950 font-black text-[9px] shadow-xl border border-amber-300 flex items-center gap-1">
+              <span>🪵</span>
+              <span>CROSS-STICK!</span>
+            </div>
+          </div>
+        )}
+
+        {/* 3. RIDE BELL CELEBRATION BADGE */}
+        {part === 'ride' && isRideBellActive && (
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce whitespace-nowrap">
+            <div className="px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 text-slate-950 font-black text-[9px] shadow-xl border border-amber-200 flex items-center gap-1">
+              <span>🔔</span>
+              <span>RIDE BELL!</span>
+            </div>
+          </div>
+        )}
+
+        {/* 3. CRASH CHOKED CELEBRATION BADGE */}
+        {part === 'crash' && isCrashChokedActive && (
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce whitespace-nowrap">
+            <div className="px-2 py-0.5 rounded-full bg-slate-900 text-cyan-300 font-black text-[9px] shadow-xl border border-cyan-400/50 flex items-center gap-1">
+              <span>✋</span>
+              <span>CHOKED!</span>
             </div>
           </div>
         )}
@@ -478,17 +655,31 @@ export const DrumSet: React.FC<DrumSetProps> = ({
               }}
             />
 
-            {/* Raised Bell (立体カップ / ドーム) */}
+            {/* Raised Bell (立体カップ / ドーム - ライド時はクリックで鋭いベル音！) */}
             <div
-              className="relative w-[34%] h-[34%] rounded-full flex items-center justify-center border-2 shadow-lg pointer-events-none"
+              onClick={(e) => {
+                if (part === 'ride') {
+                  e.stopPropagation();
+                  handleHit('ride', e, { forceRideBell: true });
+                }
+              }}
+              className={`relative w-[34%] h-[34%] rounded-full flex items-center justify-center border-2 shadow-lg transition-transform ${
+                part === 'ride' ? 'cursor-pointer pointer-events-auto hover:scale-105 active:scale-95 z-30' : 'pointer-events-none'
+              }`}
               style={{
                 background: 'radial-gradient(circle at 35% 35%, #fef08a 0%, #d97706 45%, #78350f 100%)',
                 borderColor: currentCymbal.borderColor,
                 boxShadow: '0 4px 10px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.6)',
               }}
+              title={part === 'ride' ? 'ライドベル / カップ打面 [U]' : undefined}
             >
+              {part === 'ride' && (
+                <span className="absolute -top-3 text-[7px] font-black text-amber-200 bg-black/80 px-1 rounded border border-amber-400/40 pointer-events-none">
+                  BELL [U]
+                </span>
+              )}
               {/* Black Cymbal Cushion Felt (シンバル保護フェルトワッシャー) */}
-              <div className="w-[42%] h-[42%] rounded-full bg-slate-950 border border-slate-700 shadow-inner flex items-center justify-center">
+              <div className="w-[42%] h-[42%] rounded-full bg-slate-950 border border-slate-700 shadow-inner flex items-center justify-center pointer-events-none">
                 {/* Custom Finish Wingnut (蝶ネジ / ウィングボルト) */}
                 <div
                   className="relative w-3.5 h-1.5 rounded shadow border flex items-center justify-center"
@@ -688,14 +879,35 @@ export const DrumSet: React.FC<DrumSetProps> = ({
                 <div className="w-2.5 h-2.5 rounded-full bg-slate-400/60" />
               </div>
 
-              {/* Iconic MoonGel Damper Pad (ドラマー御用達！ブルーのムーンジェルミュート) */}
-              <div className="absolute top-2 left-3 w-3 h-2 rounded bg-cyan-500/80 border border-cyan-300/90 shadow-sm pointer-events-none" />
-
-              {/* Snare Strainer Throw-off lever on right edge */}
+              {/* Iconic MoonGel Damper Pad (ドラマー御用達！ブルーのムーンジェルミュート - クリックで着脱可能！) */}
               <div
-                className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-3.5 rounded-sm shadow pointer-events-none"
-                style={{ backgroundColor: currentHw.color }}
-              />
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMoongel();
+                }}
+                className={`absolute top-2 left-3 rounded transition-all cursor-pointer pointer-events-auto z-30 flex items-center justify-center ${
+                  moongelEnabled
+                    ? 'w-3.5 h-2.5 bg-cyan-400/90 border border-cyan-200 shadow-[0_0_8px_rgba(34,211,238,0.85)] scale-110'
+                    : 'w-3 h-2 border border-dashed border-cyan-400/40 bg-cyan-950/30 hover:border-cyan-300'
+                }`}
+                title={`Moongel ダンパー: ${moongelEnabled ? '装着中 (倍音タイトカット・クリックで外す)' : '未装着 (クリックで貼る)'}`}
+              >
+                {!moongelEnabled && (
+                  <span className="text-[5px] text-cyan-300 font-mono block -mt-0.5 leading-none opacity-80">+gel</span>
+                )}
+              </div>
+
+              {/* Snare Strainer Throw-off lever on right edge (キックやタム打撃時にスナッピーがジジッと共鳴！) */}
+              <div
+                className={`absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-3.5 rounded-sm shadow pointer-events-none transition-all duration-75 ${
+                  snappyBuzzActive ? 'scale-125 translate-x-0.5 bg-amber-400 shadow-[0_0_8px_#fbbf24]' : ''
+                }`}
+                style={{ backgroundColor: snappyBuzzActive ? '#fbbf24' : currentHw.color }}
+              >
+                {snappyBuzzActive && (
+                  <span className="absolute -top-3 -right-2 text-[8px] animate-ping font-bold text-amber-300">⚡</span>
+                )}
+              </div>
             </div>
 
             {/* Snare Stand Basket Arms below */}
@@ -765,6 +977,14 @@ export const DrumSet: React.FC<DrumSetProps> = ({
 
               {/* Head Center Clear Reflection */}
               <div className="w-[32%] h-[32%] rounded-full border border-slate-500/30 bg-white/5 pointer-events-none" />
+
+              {/* Tom Moongel Patch when active */}
+              {moongelEnabled && (
+                <div
+                  className="absolute top-2 left-3 w-3 h-2 rounded bg-cyan-400/85 border border-cyan-200 shadow-[0_0_6px_rgba(34,211,238,0.7)] pointer-events-none"
+                  title="Moongel装着中"
+                />
+              )}
             </div>
 
             {/* Tom Holder L-Rod or Floor Tom Legs */}
