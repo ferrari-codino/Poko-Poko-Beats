@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { PlayerSettings, DrumLayoutType, PadScale, MascotId } from '../types';
+import { PlayerSettings, DrumLayoutType, PadScale, MascotId, DeviceMode } from '../types';
 import { drumSynth } from '../audio/drumSynth';
 import { MASCOTS } from '../data/mascots';
-import { ArrowLeft, Volume2, Sliders, Smartphone, Keyboard, Check, Layout, Sparkles } from 'lucide-react';
+import { ArrowLeft, Volume2, Sliders, Smartphone, Tablet, Keyboard, Check, Layout, Sparkles, Swords } from 'lucide-react';
 
 interface SettingsScreenProps {
   settings: PlayerSettings;
   onSaveSettings: (newSettings: PlayerSettings) => void;
   onBack: () => void;
+  deviceMode?: DeviceMode;
+  onToggleDeviceMode?: (mode?: DeviceMode) => void;
+  onOpenMyDrumSet?: () => void;
+  aiBattleEnabled?: boolean;
+  onToggleAIBattle?: () => void;
+  onOpenFeaturesPresentation?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   settings,
   onSaveSettings,
   onBack,
+  deviceMode = 'tablet',
+  onToggleDeviceMode,
+  onOpenMyDrumSet,
+  aiBattleEnabled = false,
+  onToggleAIBattle,
+  onOpenFeaturesPresentation,
 }) => {
   const [current, setCurrent] = useState<PlayerSettings>({ ...settings });
   const [calibBeat, setCalibBeat] = useState<number>(0);
@@ -95,6 +107,98 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
+        {/* DEVICE MODE & TABLET EXCLUSIVE FEATURES SECTION */}
+        <div className="bg-gradient-to-r from-slate-900/90 via-indigo-950/70 to-slate-900/90 p-4 rounded-3xl border border-cyan-500/30 shadow-lg">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2 text-xs font-black text-cyan-300">
+              <Tablet className="w-4 h-4 text-cyan-400" />
+              <span>📱 端末モード判定 ＆ 画面最適化</span>
+            </div>
+            {onOpenFeaturesPresentation && (
+              <button
+                type="button"
+                onClick={onOpenFeaturesPresentation}
+                className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-pink-500 hover:opacity-90 text-slate-950 text-[11px] font-black flex items-center gap-1 shadow-sm"
+              >
+                <Sparkles className="w-3 h-3 fill-current" />
+                <span>神機能紹介を見る</span>
+              </button>
+            )}
+          </div>
+
+          {/* Mode Switch Buttons */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => onToggleDeviceMode?.('smartphone')}
+              className={`flex items-center gap-2 p-3 rounded-2xl border text-left transition ${
+                deviceMode === 'smartphone'
+                  ? 'border-emerald-400 bg-emerald-500/20 shadow-md ring-1 ring-emerald-400'
+                  : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 text-slate-400'
+              }`}
+            >
+              <Smartphone className={`w-5 h-5 ${deviceMode === 'smartphone' ? 'text-emerald-400' : 'text-slate-500'}`} />
+              <div>
+                <div className={`text-xs font-black ${deviceMode === 'smartphone' ? 'text-white' : 'text-slate-300'}`}>
+                  スマホモード
+                </div>
+                <div className="text-[10px] text-slate-400">片手・小画面に最適化</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onToggleDeviceMode?.('tablet')}
+              className={`flex items-center gap-2 p-3 rounded-2xl border text-left transition ${
+                deviceMode === 'tablet'
+                  ? 'border-cyan-400 bg-cyan-500/20 shadow-md ring-1 ring-cyan-400'
+                  : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 text-slate-400'
+              }`}
+            >
+              <Tablet className={`w-5 h-5 ${deviceMode === 'tablet' ? 'text-cyan-400' : 'text-slate-500'}`} />
+              <div>
+                <div className={`text-xs font-black ${deviceMode === 'tablet' ? 'text-white' : 'text-slate-300'}`}>
+                  タブレットモード
+                </div>
+                <div className="text-[10px] text-slate-400">余白なし・迫力3D最大化</div>
+              </div>
+            </button>
+          </div>
+
+          {/* Tablet Exclusive Actions Bar */}
+          <div className="pt-2.5 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            {/* Custom Kits Trigger */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onOpenMyDrumSet}
+                className="px-3 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-400/40 text-xs font-black flex items-center gap-1.5 transition shadow-sm"
+              >
+                <span>🥁</span>
+                <span>マイドラムセット編集</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-400/20 text-pink-200">5スロット</span>
+              </button>
+            </div>
+
+            {/* AI Battle Toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-300">AI対戦モード:</span>
+              <button
+                type="button"
+                onClick={onToggleAIBattle}
+                className={`px-3 py-1 rounded-xl text-xs font-black border flex items-center gap-1 transition ${
+                  aiBattleEnabled
+                    ? 'bg-purple-500/30 text-purple-200 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}
+              >
+                <Swords className="w-3.5 h-3.5" />
+                <span>{aiBattleEnabled ? '有効 (ON)' : '無効 (OFF)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* DRUM LAYOUT CUSTOMIZATION (Q2) */}
         <div className="bg-slate-900/90 p-4 rounded-3xl border border-pink-500/30 shadow-lg">
           <div className="flex items-center gap-2 text-xs font-black text-pink-300 mb-2">

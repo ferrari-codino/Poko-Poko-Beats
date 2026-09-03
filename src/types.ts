@@ -275,6 +275,55 @@ export interface PlayerSettings {
   drumLayout: DrumLayoutType;
   padScale: PadScale;
   ambiencePreset?: AmbiencePreset;
+  deviceMode?: DeviceMode;
+  customKits?: CustomDrumKit[];
+  activeKitId?: string;
+  aiBattleEnabled?: boolean;
+  aiBattleLevel?: AILevel;
+}
+
+export type DeviceMode = 'smartphone' | 'tablet';
+
+// Custom Drum Kit Types for Tablet Mode
+export type ShellMaterial = 'birch' | 'maple' | 'acrylic' | 'brass' | 'carbon';
+export type DrumHeadStyle = 'coatedWhite' | 'clearEbony' | 'vintage' | 'hydraulicBlue' | 'goldFoil';
+export type HardwareFinish = 'chrome' | 'blackNickel' | 'gold';
+export type CymbalFinish = 'brilliantGold' | 'traditionalBronze' | 'darkVintage' | 'platinum';
+
+export interface CustomDrumKit {
+  id: string;
+  name: string; // ニックネーム
+  shellMaterial: ShellMaterial;
+  shellColor: string; // Hex color or gradient string
+  headStyle: DrumHeadStyle;
+  hardwareFinish: HardwareFinish;
+  cymbalFinish: CymbalFinish;
+  isDefault: boolean;
+  createdAt: number;
+}
+
+// AI Battle Mode Types
+export type AILevel = 'beginner' | 'intermediate' | 'advanced' | 'master';
+
+export interface AIBattleConfig {
+  enabled: boolean;
+  level: AILevel;
+  name: string;
+  avatarId: MascotId;
+  failureRate: number; // probability of Miss / Good (tuned so human win rate is ~70%, AI win rate is ~30%)
+}
+
+export interface AIBattleState {
+  score: number;
+  combo: number;
+  maxCombo: number;
+  perfect: number;
+  great: number;
+  good: number;
+  miss: number;
+  accuracy: number;
+  activePart?: DrumPartId | null;
+  lastJudgment?: JudgmentType | null;
 }
 
 export type GameScreen =

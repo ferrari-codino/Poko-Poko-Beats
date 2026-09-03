@@ -19,6 +19,7 @@ import {
   Github,
   Shield,
   Layers,
+  Swords,
 } from 'lucide-react';
 
 interface SongSelectScreenProps {
@@ -42,6 +43,9 @@ interface SongSelectScreenProps {
   onStartRPGLevel?: (level: number) => void;
   rpgLevel?: number;
   onOpenShowcase?: () => void;
+  onOpenMyDrumSet?: () => void;
+  aiBattleEnabled?: boolean;
+  onToggleAIBattle?: () => void;
 }
 
 export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
@@ -65,6 +69,9 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
   onStartRPGLevel,
   rpgLevel = 1,
   onOpenShowcase,
+  onOpenMyDrumSet,
+  aiBattleEnabled = false,
+  onToggleAIBattle,
 }) => {
   const currentDiffInfo = selectedSong.difficulties[selectedDifficulty];
   const mascot = MASCOTS[currentUser?.avatarId || 'pokota'] || MASCOTS.pokota;
@@ -186,6 +193,42 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               title="GitHub 連携 & URL 情報"
             >
               <Github className="w-4 h-4 text-white" />
+            </button>
+          )}
+
+          {/* Tablet Dedicated Feature 1: My Drum Kit Customizer Button */}
+          {onOpenMyDrumSet && (
+            <button
+              id="song-select-my-drum-btn"
+              type="button"
+              onClick={onOpenMyDrumSet}
+              className="px-2.5 py-1.5 rounded-2xl bg-pink-500/25 hover:bg-pink-500/35 text-pink-300 text-xs font-black border border-pink-400/50 flex items-center gap-1.5 transition shadow-sm"
+              title="マイドラムセットの素材・色・ニックネームをカスタマイズ（最大5スロット登録）"
+            >
+              <span>🥁</span>
+              <span className="hidden sm:inline">マイドラム</span>
+              <span className="text-[9px] px-1 rounded bg-pink-400/20 text-pink-200 font-bold">5台</span>
+            </button>
+          )}
+
+          {/* Tablet Dedicated Feature 2: AI Battle Mode Toggle Button */}
+          {onToggleAIBattle && (
+            <button
+              id="song-select-ai-battle-btn"
+              type="button"
+              onClick={onToggleAIBattle}
+              className={`px-2.5 py-1.5 rounded-2xl text-xs font-black border flex items-center gap-1.5 transition shadow-sm ${
+                aiBattleEnabled
+                  ? 'bg-purple-500/30 text-purple-200 border-purple-400/60 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 border-slate-800'
+              }`}
+              title="AI対戦モードのON/OFF切り替え"
+            >
+              <Swords className={`w-3.5 h-3.5 ${aiBattleEnabled ? 'text-purple-300 animate-pulse' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">AI対戦</span>
+              <span className={`text-[9px] px-1 rounded font-bold ${aiBattleEnabled ? 'bg-purple-400 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>
+                {aiBattleEnabled ? 'ON' : 'OFF'}
+              </span>
             </button>
           )}
 

@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { GameScreen as GameScreenType, SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, UserProfile, CourseState } from './types';
+import {
+  GameScreen as GameScreenType,
+  SongData,
+  Difficulty,
+  ScoreState,
+  RhythmNote,
+  PlayerSettings,
+  UserProfile,
+  CourseState,
+  DeviceMode,
+  CustomDrumKit,
+  RPGProgress,
+} from './types';
 import { SONGS } from './data/songs';
 import { SongSelectScreen } from './components/SongSelectScreen';
 import { GameScreen } from './components/GameScreen';
@@ -14,13 +26,17 @@ import { GitHubModal } from './components/GitHubModal';
 import { CourseSelectModal } from './components/CourseSelectModal';
 import { RPGCourseModal } from './components/RPGCourseModal';
 import { ShowcaseModal } from './components/ShowcaseModal';
+import { FeaturesPresentationModal } from './components/FeaturesPresentationModal';
+import { MyDrumKitModal } from './components/MyDrumKitModal';
 import { AdminLockScreen } from './components/AdminLockScreen';
 import { AdminPanelScreen } from './components/AdminPanelScreen';
 import { DeviceGateScreen } from './components/DeviceGateScreen';
 import { drumSynth } from './audio/drumSynth';
 import { getLocalUsers } from './utils/storageFallback';
 import { loadRPGProgress, getRPGLevelConfig } from './data/rpgCurriculum';
-import { RPGProgress } from './types';
+import { detectInitialDeviceMode, savePreferredDeviceMode } from './utils/deviceDetector';
+import { loadCustomKits, saveCustomKits } from './data/customDrumKits';
+import { Smartphone, Tablet, Sliders, Swords, Sparkles } from 'lucide-react';
 
 const DEV_APP_URL = 'https://ais-dev-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
 const SHARED_APP_URL = 'https://ais-pre-52fgspwlg7gwz63oc3ec7m-668070792322.asia-east1.run.app';
@@ -104,6 +120,31 @@ export default function App() {
     return isMobileUA || isIPadOS || (hasTouch && isMobileScreen);
   });
 
+  // Device Mode: 'smartphone' vs 'tablet' (自動判定 ＆ 手動切り替え)
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>(() => detectInitialDeviceMode());
+
+  // Tablet-specific Feature 1: My Drum Kits (5 slots, nicknames, materials, colors)
+  const [customKits, setCustomKits] = useState<CustomDrumKit[]>(() => loadCustomKits());
+  const [activeKitId, setActiveKitId] = useState<string>(() => {
+    const kits = loadCustomKits();
+    const defaultKit = kits.find((k) => k.isDefault);
+    return defaultKit ? defaultKit.id : kits[0]?.id || 'kit-slot-1';
+  });
+  const [isMyDrumKitModalOpen, setIsMyDrumKitModalOpen] = useState<boolean>(false);
+
+  // Tablet-specific Feature 2: AI Battle Mode (ON/OFF)
+  const [aiBattleEnabled, setAiBattleEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('pokopoko_ai_battle_enabled');
+      if (saved !== null) return saved === 'true';
+    } catch {}
+    // Default to true when in tablet mode, false in smartphone mode
+    return detectInitialDeviceMode() === 'tablet';
+  });
+
+  // Spectacular Features Presentation Modal
+  const [isFeaturesPresentationOpen, setIsFeaturesPresentationOpen] = useState<boolean>(false);
+
   useEffect(() => {
     const checkDevice = () => {
       const ua = navigator.userAgent || '';
@@ -112,11 +153,33 @@ export default function App() {
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       const isMobileScreen = window.innerWidth <= 1024;
       setIsMobileOrTablet(isMobileUA || isIPadOS || (hasTouch && isMobileScreen));
+
+      // Auto-detect smartphone vs tablet mode on resize/orientation change if no manual override
+      try {
+        const manualOverride = localStorage.getItem('pokopoko_preferred_device_mode');
+        if (!manualOverride) {
+          const autoMode = detectInitialDeviceMode();
+          setDeviceMode(autoMode);
+        }
+      } catch {}
     };
 
     window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
+    window.addEventListener('orientationchange', checkDevice);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      window.removeEventListener('orientationchange', checkDevice);
+    };
   }, []);
+
+  const toggleDeviceMode = (mode?: DeviceMode) => {
+    const newMode = mode || (deviceMode === 'smartphone' ? 'tablet' : 'smartphone');
+    setDeviceMode(newMode);
+    savePreferredDeviceMode(newMode);
+    if (newMode === 'tablet' && !aiBattleEnabled) {
+      setAiBattleEnabled(true);
+    }
+  };
 
   // Load user settings from localStorage if available
   const [settings, setSettings] = useState<PlayerSettings>(() => {
@@ -318,14 +381,118 @@ export default function App() {
     setScreen('result');
   };
 
+  const activeKit = customKits.find((k) => k.id === activeKitId) || customKits[0];
+
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 text-slate-100 flex items-center justify-center p-0 sm:p-4 overflow-hidden font-sans">
+    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 text-slate-100 flex flex-col items-center justify-center p-0 sm:p-2 overflow-hidden font-sans">
       {/* Cute Floating Decorative Background Dots */}
       <div className="fixed top-12 left-12 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-12 right-12 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Mobile container framing */}
-      <main className="w-full max-w-md h-screen sm:h-[94vh] sm:max-h-[860px] bg-slate-950/95 sm:rounded-[36px] sm:border-2 sm:border-pink-500/30 shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-xl">
+      {/* TOP FLOATING DEVICE MODE & TABLET FUNCTION BAR (端末最適化 ＆ タブレット専用機能バー) */}
+      <div className="w-full max-w-6xl px-2 py-1 flex items-center justify-between z-30 text-xs">
+        {/* Device Mode Detection & Toggle Pill */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => toggleDeviceMode()}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border transition-all shadow-md active:scale-95 ${
+              deviceMode === 'tablet'
+                ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-400/50 shadow-cyan-500/20'
+                : 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-400/50 shadow-emerald-500/20'
+            }`}
+            title="クリックでスマホモード/タブレットモードを手動切り替え"
+          >
+            {deviceMode === 'tablet' ? (
+              <>
+                <Tablet className="w-3.5 h-3.5 text-cyan-400" />
+                <span>タブレットモード</span>
+                <span className="text-[9px] px-1 rounded bg-cyan-400/20 text-cyan-200">画面最大化</span>
+              </>
+            ) : (
+              <>
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                <span>スマホモード</span>
+                <span className="text-[9px] px-1 rounded bg-emerald-400/20 text-emerald-200">片手最適化</span>
+              </>
+            )}
+          </button>
+
+          {/* Quick Toggle switch button */}
+          <button
+            type="button"
+            onClick={() => toggleDeviceMode()}
+            className="text-[10px] text-slate-400 hover:text-slate-200 underline decoration-slate-600 transition"
+          >
+            切替
+          </button>
+        </div>
+
+        {/* Action Controls: Presentation Button & Tablet Exclusive Quick Actions */}
+        <div className="flex items-center gap-1.5">
+          {/* Spectacular Features Presentation Button (派手な演出の機能紹介ボタン) */}
+          <button
+            id="header-features-presentation-btn"
+            type="button"
+            onClick={() => setIsFeaturesPresentationOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-cyan-400 hover:opacity-90 active:scale-95 text-slate-950 text-[11px] font-black shadow-[0_0_15px_rgba(245,158,11,0.5)] border border-white/60 transition"
+          >
+            <Sparkles className="w-3.5 h-3.5 fill-current animate-spin" style={{ animationDuration: '3s' }} />
+            <span>神機能プレゼン</span>
+          </button>
+
+          {/* Tablet Exclusive: My Drum Kit Customization Button */}
+          {deviceMode === 'tablet' && (
+            <button
+              id="open-my-drum-kit-btn"
+              type="button"
+              onClick={() => setIsMyDrumKitModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-400/50 text-[11px] font-black shadow-sm transition active:scale-95"
+              title="タブレット専用: マイドラムセットの素材・色・ニックネーム設定（5台保存）"
+            >
+              <Sliders className="w-3.5 h-3.5 text-pink-400" />
+              <span className="hidden sm:inline">マイドラムセット</span>
+              <span className="text-[9px] px-1 rounded bg-pink-400/20 text-pink-200">5スロット</span>
+            </button>
+          )}
+
+          {/* Tablet Exclusive: AI Battle Mode Toggle */}
+          {deviceMode === 'tablet' && (
+            <button
+              id="toggle-ai-battle-btn"
+              type="button"
+              onClick={() => {
+                const next = !aiBattleEnabled;
+                setAiBattleEnabled(next);
+                try {
+                  localStorage.setItem('pokopoko_ai_battle_enabled', String(next));
+                } catch {}
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black border transition active:scale-95 ${
+                aiBattleEnabled
+                  ? 'bg-purple-500/30 text-purple-200 border-purple-400/60 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
+                  : 'bg-slate-800/80 text-slate-400 border-slate-700'
+              }`}
+              title="タブレット専用: AI対戦モード切替"
+            >
+              <Swords className={`w-3.5 h-3.5 ${aiBattleEnabled ? 'text-purple-300 animate-pulse' : 'text-slate-500'}`} />
+              <span>AI対戦</span>
+              <span className={`text-[9px] px-1 rounded ${aiBattleEnabled ? 'bg-purple-400 text-slate-950' : 'bg-slate-700 text-slate-400'}`}>
+                {aiBattleEnabled ? 'ON' : 'OFF'}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Dynamic Screen-Optimized Responsive Container Framing (無駄な余白を発生させない最適化) */}
+      <main
+        className={`w-full ${
+          deviceMode === 'smartphone'
+            ? 'max-w-xl h-screen sm:h-[95vh] sm:max-h-[880px]'
+            : 'max-w-6xl h-screen sm:h-[96vh] sm:max-h-[940px]'
+        } bg-slate-950/95 sm:rounded-[36px] sm:border-2 sm:border-pink-500/30 shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-xl transition-all duration-300`}
+      >
         {/* Device Restriction Check for Smartphone & Tablet Only */}
         {!isMobileOrTablet && !isBypassDeviceGate ? (
           <DeviceGateScreen
@@ -372,7 +539,16 @@ export default function App() {
             onOpenGitHub={() => setIsGitHubModalOpen(true)}
             onOpenAdmin={() => setScreen('admin')}
             onOpenCourseModal={() => setIsCourseModalOpen(true)}
-            onOpenShowcase={() => setIsShowcaseModalOpen(true)}
+            onOpenShowcase={() => setIsFeaturesPresentationOpen(true)}
+            onOpenMyDrumSet={() => setIsMyDrumKitModalOpen(true)}
+            aiBattleEnabled={aiBattleEnabled}
+            onToggleAIBattle={() => {
+              const next = !aiBattleEnabled;
+              setAiBattleEnabled(next);
+              try {
+                localStorage.setItem('pokopoko_ai_battle_enabled', String(next));
+              } catch {}
+            }}
             onOpenRPGModal={() => {
               setRpgProgress(loadRPGProgress());
               setIsRPGModalOpen(true);
@@ -396,6 +572,9 @@ export default function App() {
             settings={settings}
             rpgLevel={activeRPGLevel}
             userLevel={rpgProgress.currentLevel}
+            deviceMode={deviceMode}
+            customKit={activeKit}
+            aiBattleEnabled={aiBattleEnabled}
             onFinishGame={handleFinishGame}
             onExit={() => {
               setCourseState(null);
@@ -463,6 +642,18 @@ export default function App() {
             settings={settings}
             onSaveSettings={updateSettings}
             onBack={() => setScreen('select')}
+            deviceMode={deviceMode}
+            onToggleDeviceMode={toggleDeviceMode}
+            onOpenMyDrumSet={() => setIsMyDrumKitModalOpen(true)}
+            aiBattleEnabled={aiBattleEnabled}
+            onToggleAIBattle={() => {
+              const next = !aiBattleEnabled;
+              setAiBattleEnabled(next);
+              try {
+                localStorage.setItem('pokopoko_ai_battle_enabled', String(next));
+              } catch {}
+            }}
+            onOpenFeaturesPresentation={() => setIsFeaturesPresentationOpen(true)}
           />
         )}
 
@@ -509,6 +700,31 @@ export default function App() {
           onStartPlaying={() => {
             setIsShowcaseModalOpen(false);
             setScreen('select');
+          }}
+        />
+
+        {/* Poko-poko Beats 感動の派手な新機能プレゼンテーションモーダル */}
+        <FeaturesPresentationModal
+          isOpen={isFeaturesPresentationOpen}
+          onClose={() => setIsFeaturesPresentationOpen(false)}
+          onOpenMyDrumSet={() => setIsMyDrumKitModalOpen(true)}
+          onStartAIBattle={() => {
+            setAiBattleEnabled(true);
+            setDeviceMode('tablet');
+            savePreferredDeviceMode('tablet');
+          }}
+        />
+
+        {/* タブレット専用: マイドラムセットカスタマイズモーダル（5スロット保存） */}
+        <MyDrumKitModal
+          isOpen={isMyDrumKitModalOpen}
+          onClose={() => setIsMyDrumKitModalOpen(false)}
+          customKits={customKits}
+          activeKitId={activeKitId}
+          onSelectKit={(kitId) => setActiveKitId(kitId)}
+          onUpdateKits={(kits) => {
+            setCustomKits(kits);
+            saveCustomKits(kits);
           }}
         />
       </main>

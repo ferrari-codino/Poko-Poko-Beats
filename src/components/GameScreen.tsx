@@ -1,15 +1,31 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SongData, Difficulty, DrumPartId, RhythmNote, JudgmentType, ScoreState, JudgmentFeedback, PlayerSettings, RPGCoach, GrooveTimingType } from '../types';
+import {
+  SongData,
+  Difficulty,
+  DrumPartId,
+  RhythmNote,
+  JudgmentType,
+  ScoreState,
+  JudgmentFeedback,
+  PlayerSettings,
+  RPGCoach,
+  GrooveTimingType,
+  CustomDrumKit,
+  DeviceMode,
+  AILevel,
+} from '../types';
 import { DrumSet } from './DrumSet';
 import { MascotCharacter } from './MascotCharacter';
 import { HitBurstEffect } from './HitBurstEffect';
 import { DrumScoreLane } from './DrumScoreLane';
 import { CoachInGameCheer } from './CoachInGameCheer';
+import { AIBattleMiniDrumSet } from './AIBattleMiniDrumSet';
 import { RPG_COACHES } from '../data/rpgCoaches';
 import { getTierForLevel, getUnlockedPartsForLevel, getRPGLevelConfig, generateRPGLevelNotes } from '../data/rpgCurriculum';
 import { musicEngine } from '../audio/musicEngine';
 import { drumSynth } from '../audio/drumSynth';
-import { Pause, Play, RotateCcw, Volume2, Flame, Award, Music, Activity } from 'lucide-react';
+import { rollAIJudgment, AI_LEVEL_PROFILES } from '../data/aiBattleConfig';
+import { Pause, Play, RotateCcw, Volume2, Flame, Award, Music, Activity, Swords } from 'lucide-react';
 
 interface GameScreenProps {
   song: SongData;
@@ -17,6 +33,10 @@ interface GameScreenProps {
   settings: PlayerSettings;
   rpgLevel?: number | null;
   userLevel?: number;
+  deviceMode?: DeviceMode;
+  customKit?: CustomDrumKit;
+  aiBattleEnabled?: boolean;
+  initialAILevel?: AILevel;
   onFinishGame: (finalScore: ScoreState, notes: RhythmNote[]) => void;
   onExit: () => void;
 }
@@ -27,6 +47,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   settings,
   rpgLevel,
   userLevel,
+  deviceMode = 'smartphone',
+  customKit,
+  aiBattleEnabled = false,
+  initialAILevel,
   onFinishGame,
   onExit,
 }) => {
@@ -36,6 +60,37 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [feedbacks, setFeedbacks] = useState<JudgmentFeedback[]>([]);
   const [lastJudgment, setLastJudgment] = useState<JudgmentType | null>(null);
+
+  // AI Battle Mode State
+  const defaultAILevel: AILevel = (() => {
+    if (initialAILevel) return initialAILevel;
+    if (difficulty === 'easy') return 'beginner';
+    if (difficulty === 'normal') return 'intermediate';
+    if (difficulty === 'hard') return 'advanced';
+    return 'master';
+  })();
+
+  const [selectedAILevel, setSelectedAILevel] = useState<AILevel>(defaultAILevel);
+  const [aiLastHitPart, setAiLastHitPart] = useState<DrumPartId | null>(null);
+  const [aiLastJudgment, setAiLastJudgment] = useState<JudgmentType | null>(null);
+  const [aiScoreState, setAiScoreState] = useState<{
+    score: number;
+    combo: number;
+    maxCombo: number;
+    perfect: number;
+    great: number;
+    good: number;
+    miss: number;
+  }>({
+    score: 0,
+    combo: 0,
+    maxCombo: 0,
+    perfect: 0,
+    great: 0,
+    good: 0,
+    miss: 0,
+  });
+  const aiProcessedNotesRef = useRef<Set<string>>(new Set());
 
   // RPG Progression & Dedicated Coach
   const rpgConfig = rpgLevel ? getRPGLevelConfig(rpgLevel) : null;
@@ -217,8 +272,40 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       if (hasMissed) {
         handleScoreUpdate('MISS', 0);
       }
+
+      // ---------------------------------------------------------
+      // AI DRUMMER PERFORMANCE EVALUATION (AI対戦の自動演奏)
+      // ---------------------------------------------------------
+      if (aiBattleEnabled) {
+        notesRef.current.forEach((n) => {
+          if (!aiProcessedNotesRef.current.has(n.id) && effectiveTime >= n.time - 0.02) {
+            aiProcessedNotesRef.current.add(n.id);
+            const aiJdg = rollAIJudgment(selectedAILevel);
+            setAiLastHitPart(n.part);
+            setAiLastJudgment(aiJdg);
+
+            setAiScoreState((prev) => {
+              const isHit = aiJdg !== 'MISS';
+              const newCombo = isHit ? prev.combo + 1 : 0;
+              const newMaxCombo = Math.max(prev.maxCombo, newCombo);
+              const pts = aiJdg === 'PERFECT' ? 1000 : aiJdg === 'GREAT' ? 700 : aiJdg === 'GOOD' ? 400 : 0;
+              const comboBonus = Math.min(newCombo * 10, 200);
+              return {
+                ...prev,
+                score: prev.score + pts + (isHit ? comboBonus : 0),
+                combo: newCombo,
+                maxCombo: newMaxCombo,
+                perfect: prev.perfect + (aiJdg === 'PERFECT' ? 1 : 0),
+                great: prev.great + (aiJdg === 'GREAT' ? 1 : 0),
+                good: prev.good + (aiJdg === 'GOOD' ? 1 : 0),
+                miss: prev.miss + (aiJdg === 'MISS' ? 1 : 0),
+              };
+            });
+          }
+        });
+      }
     },
-    [approachWindow, settings.audioOffsetMs, rpgLevel]
+    [approachWindow, settings.audioOffsetMs, rpgLevel, aiBattleEnabled, selectedAILevel]
   );
 
   const triggerFeedback = (type: JudgmentType, part: DrumPartId, offsetMs?: number) => {
@@ -449,6 +536,18 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const handleRestart = () => {
     musicEngine.stop();
     setIsPaused(false);
+    aiProcessedNotesRef.current.clear();
+    setAiLastHitPart(null);
+    setAiLastJudgment(null);
+    setAiScoreState({
+      score: 0,
+      combo: 0,
+      maxCombo: 0,
+      perfect: 0,
+      great: 0,
+      good: 0,
+      miss: 0,
+    });
     setScoreState({
       score: 0,
       combo: 0,
@@ -657,8 +756,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         />
       </div>
 
-      {/* CENTER STAGE: 3D-ANGLED DRUM SET & JUDGMENT DISPLAY */}
-      <div className="relative flex-1 flex flex-col items-center justify-center my-1">
+      {/* CENTER STAGE: 3D-ANGLED DRUM SET & AI BATTLE MINI DRUM SET (画面最適化＆高占有率) */}
+      <div className={`relative flex-1 w-full max-w-7xl mx-auto flex ${aiBattleEnabled ? 'flex-col lg:flex-row items-center justify-center gap-3' : 'items-center justify-center'} my-0.5 px-1 sm:px-3`}>
         {/* Flashy Judgment, Combo & English Exclamations Feedback */}
         <HitBurstEffect
           feedbacks={feedbacks}
@@ -668,7 +767,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
         {/* 2. REAL-TIME GROOVE ANALYZER POPUP */}
         {grooveBadge && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute top-1 left-1/2 -translate-x-1/2 z-30 pointer-events-none animate-in fade-in zoom-in-95 duration-100">
             <div className={`px-2.5 py-0.5 rounded-full border text-[10px] sm:text-xs font-mono font-black shadow-lg flex items-center gap-1.5 ${grooveBadge.color}`}>
               <span>{grooveBadge.label}</span>
               <span className="opacity-80">({grooveBadge.offsetMs > 0 ? `+${grooveBadge.offsetMs}` : grooveBadge.offsetMs}ms)</span>
@@ -676,28 +775,99 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </div>
         )}
 
-        {/* 3D Angled Real Drum Set */}
-        <DrumSet
-          onDrumHit={handleDrumHit}
-          activeGlowingParts={activeGlows}
-          showKeyHints={settings.showKeyHints}
-          hapticsEnabled={settings.hapticsEnabled}
-          drumLayout={settings.drumLayout || 'standard'}
-          padScale={settings.padScale || 'normal'}
-          unlockedParts={unlockedParts}
-          prepareTargetPart={
-            (() => {
-              const nextNote = notes.find((n) => !n.hit && !n.missed && n.time >= currentTime && n.time <= currentTime + approachWindow);
-              if (!nextNote) return null;
-              if (settings.drumLayout === 'compact') {
-                if (nextNote.part === 'tomHigh' || nextNote.part === 'tomLow' || nextNote.part === 'tomFloor') return 'snare';
-                if (nextNote.part === 'hihatOpen') return 'hihatClosed';
-                if (nextNote.part === 'ride') return 'crash';
-              }
-              return nextNote.part;
-            })()
-          }
-        />
+        {/* MAIN 3D ANGLED REAL DRUM SET (プレイヤー用ドラムセット) */}
+        <div className={`relative flex-1 w-full flex items-center justify-center ${aiBattleEnabled ? 'max-w-4xl' : 'max-w-5xl'}`}>
+          <DrumSet
+            onDrumHit={handleDrumHit}
+            activeGlowingParts={activeGlows}
+            showKeyHints={settings.showKeyHints}
+            hapticsEnabled={settings.hapticsEnabled}
+            drumLayout={settings.drumLayout || 'standard'}
+            padScale={settings.padScale || 'normal'}
+            unlockedParts={unlockedParts}
+            customKit={customKit}
+            deviceMode={deviceMode}
+            prepareTargetPart={
+              (() => {
+                const nextNote = notes.find((n) => !n.hit && !n.missed && n.time >= currentTime && n.time <= currentTime + approachWindow);
+                if (!nextNote) return null;
+                if (settings.drumLayout === 'compact') {
+                  if (nextNote.part === 'tomHigh' || nextNote.part === 'tomLow' || nextNote.part === 'tomFloor') return 'snare';
+                  if (nextNote.part === 'hihatOpen') return 'hihatClosed';
+                  if (nextNote.part === 'ride') return 'crash';
+                }
+                return nextNote.part;
+              })()
+            }
+          />
+        </div>
+
+        {/* AI BATTLE MINI DRUM SET (AI対戦モード時: 右側に小型AIドラムセットを表示) */}
+        {aiBattleEnabled && (
+          <div className="w-full lg:w-72 flex flex-col items-center justify-center z-20 animate-in fade-in slide-in-from-right-4 duration-300">
+            {/* Live Battle Score Lead Indicator */}
+            <div className="w-full flex items-center justify-between px-3 py-1 mb-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shadow-md">
+              <div className="flex items-center gap-1 font-bold text-slate-300 text-[11px]">
+                <Swords className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+                <span>VS AIスコア差</span>
+              </div>
+              <div
+                className={`font-mono font-black text-xs px-2 py-0.5 rounded-full ${
+                  scoreState.score >= aiScoreState.score
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                }`}
+              >
+                {scoreState.score >= aiScoreState.score
+                  ? `+${(scoreState.score - aiScoreState.score).toLocaleString()}pt リード`
+                  : `-${(aiScoreState.score - scoreState.score).toLocaleString()}pt ビハインド`}
+              </div>
+            </div>
+
+            {/* AI Level Selector Chips */}
+            <div className="w-full flex items-center justify-between gap-1 mb-1.5 px-1">
+              {(['beginner', 'intermediate', 'advanced', 'master'] as AILevel[]).map((lvl) => {
+                const profile = AI_LEVEL_PROFILES[lvl];
+                const isActive = selectedAILevel === lvl;
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setSelectedAILevel(lvl)}
+                    className={`flex-1 py-1 px-1 rounded-lg text-[9px] font-bold border transition-all text-center truncate ${
+                      isActive
+                        ? 'bg-rose-500 text-white border-rose-400 shadow-md scale-102'
+                        : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    {profile.title}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mini Drum Set Component */}
+            <div className="w-full">
+              <AIBattleMiniDrumSet
+                aiLevel={selectedAILevel}
+                aiScore={aiScoreState.score}
+                aiCombo={aiScoreState.combo}
+                aiAccuracy={
+                  aiScoreState.perfect + aiScoreState.great + aiScoreState.good + aiScoreState.miss > 0
+                    ? Math.round(
+                        ((aiScoreState.perfect + aiScoreState.great * 0.8 + aiScoreState.good * 0.5) /
+                          (aiScoreState.perfect + aiScoreState.great + aiScoreState.good + aiScoreState.miss)) *
+                          100
+                      )
+                    : 100
+                }
+                lastHitPart={aiLastHitPart}
+                lastJudgment={aiLastJudgment}
+                deviceMode={deviceMode}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* BOTTOM FOOTER INFO */}
