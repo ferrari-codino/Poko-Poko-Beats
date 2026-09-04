@@ -859,17 +859,30 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             <div className="w-full">
               <AIBattleMiniDrumSet
                 aiLevel={selectedAILevel}
+                aiState={{
+                  score: aiScoreState.score,
+                  combo: aiScoreState.combo,
+                  maxCombo: aiScoreState.maxCombo,
+                  perfect: aiScoreState.perfect,
+                  great: aiScoreState.great,
+                  good: aiScoreState.good,
+                  miss: aiScoreState.miss,
+                  accuracy:
+                    aiScoreState.perfect + aiScoreState.great + aiScoreState.good + aiScoreState.miss > 0
+                      ? Math.round(
+                          ((aiScoreState.perfect + aiScoreState.great * 0.8 + aiScoreState.good * 0.5) /
+                            (aiScoreState.perfect + aiScoreState.great + aiScoreState.good + aiScoreState.miss)) *
+                            100
+                        )
+                      : 100,
+                  activePart: aiLastHitPart,
+                  lastJudgment: aiLastJudgment,
+                }}
+                playerScore={scoreState.score}
+                playerCombo={scoreState.combo}
+                isFever={scoreState.isFever}
                 aiScore={aiScoreState.score}
                 aiCombo={aiScoreState.combo}
-                aiAccuracy={
-                  aiScoreState.perfect + aiScoreState.great + aiScoreState.good + aiScoreState.miss > 0
-                    ? Math.round(
-                        ((aiScoreState.perfect + aiScoreState.great * 0.8 + aiScoreState.good * 0.5) /
-                          (aiScoreState.perfect + aiScoreState.great + aiScoreState.good + aiScoreState.miss)) *
-                          100
-                      )
-                    : 100
-                }
                 lastHitPart={aiLastHitPart}
                 lastJudgment={aiLastJudgment}
                 deviceMode={deviceMode}

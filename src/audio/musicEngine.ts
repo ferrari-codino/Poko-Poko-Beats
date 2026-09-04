@@ -6,6 +6,11 @@ interface ScheduledNote {
   scheduledTime: number;
 }
 
+interface ActiveSynthNode {
+  stopTime: number;
+  stop: () => void;
+}
+
 class MusicEngine {
   private isPlaying: boolean = false;
   private startTime: number = 0;
@@ -14,7 +19,8 @@ class MusicEngine {
   private currentSong: SongData | null = null;
   private currentDifficulty: Difficulty = 'normal';
   private scheduledNotes: ScheduledNote[] = [];
-  private synthNodes: { stop: () => void }[] = [];
+  private synthNodes: ActiveSynthNode[] = [];
+  private lastScheduledMeasure: number = 0;
   private animationFrameId: number | null = null;
   private onTimeUpdateCallback: ((time: number, progress: number) => void) | null = null;
   private onSongEndCallback: (() => void) | null = null;
@@ -56,15 +62,15 @@ class MusicEngine {
     this.isPlaying = true;
     this.isPaused = false;
 
-    // Start with a small lookahead buffer (0.15s) for audio pipeline stabilization
-    const startAudioTime = ctx.currentTime + 0.15;
+    // Start with a small lookahead buffer (0.12s) for audio pipeline stabilization
+    const startAudioTime = ctx.currentTime + 0.12;
     this.startTime = startAudioTime;
-
-    // Schedule backing music track
-    this.scheduleBackingTrack(song, startAudioTime);
+    this.lastScheduledMeasure = 0;
 
     // Schedule guide clicks & drum notes for the song
-    const notes = song.difficulties[difficulty].notes.map((n, i) => ({
+    const targetDiff = song.difficulties[difficulty] || song.difficulties.normal || song.difficulties.easy;
+    const rawNotes = targetDiff?.notes || [];
+    const notes = rawNotes.map((n, i) => ({
       ...n,
       id: `note-${i}-${n.part}-${n.time}`,
       hit: false,
@@ -75,6 +81,9 @@ class MusicEngine {
       note: n,
       scheduledTime: n.time,
     }));
+
+    // Initial non-blocking lookahead schedule
+    this.scheduleAhead();
 
     this.startTickLoop(song.duration);
   }
@@ -105,15 +114,21 @@ class MusicEngine {
 
     this.isPaused = false;
     this.startTime = ctx.currentTime - this.pauseTime;
-    
-    // Reschedule remaining backing track from current time
-    this.scheduleBackingTrack(this.currentSong, this.startTime, this.pauseTime);
+
+    const bpm = this.currentSong.bpm;
+    const beatSec = 60 / bpm;
+    const beatsPerMeasure = this.currentSong.timeSignature.startsWith('3') ? 3 : this.currentSong.timeSignature.startsWith('6') ? 6 : this.currentSong.timeSignature.startsWith('7') ? 7 : 4;
+    const measureDuration = beatSec * beatsPerMeasure;
+    this.lastScheduledMeasure = Math.max(0, Math.floor(this.pauseTime / measureDuration));
+
+    this.scheduleAhead();
     this.startTickLoop(this.currentSong.duration);
   }
 
   public stop() {
     this.isPlaying = false;
     this.isPaused = false;
+    this.lastScheduledMeasure = 0;
     this.clearAllSynths();
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
@@ -141,6 +156,9 @@ class MusicEngine {
       const currentTime = this.getCurrentTime();
       const progress = Math.min(1, currentTime / duration);
 
+      // Perform non-blocking lookahead check
+      this.scheduleAhead();
+
       if (this.onTimeUpdateCallback) {
         this.onTimeUpdateCallback(currentTime, progress);
       }
@@ -159,14 +177,23 @@ class MusicEngine {
     this.animationFrameId = requestAnimationFrame(tick);
   }
 
-  // Generates procedurally rich musical backing tracks matching song genre and tempo!
-  private scheduleBackingTrack(song: SongData, audioStartTime: number, startOffset: number = 0) {
+  // Lookahead scheduler: schedules procedural backing track ~3 seconds ahead in non-blocking batches
+  private scheduleAhead() {
+    if (!this.isPlaying || this.isPaused || !this.currentSong) return;
     const ctx = drumSynth.getContext();
     if (!ctx || !this.bgmGain) return;
 
+    // Periodically prune expired audio nodes
+    const now = ctx.currentTime;
+    if (this.synthNodes.length > 50) {
+      this.synthNodes = this.synthNodes.filter((n) => n.stopTime > now);
+    }
+
+    const song = this.currentSong;
     const bpm = song.bpm;
     const beatSec = 60 / bpm;
-    const totalDuration = song.duration;
+    const currentTime = this.getCurrentTime();
+    const lookaheadTime = currentTime + 3.2;
 
     // Musical chord progression bases by theme
     const progressions: Record<string, { chords: number[][]; bassline: number[]; melody: number[] }> = {
@@ -351,11 +378,14 @@ class MusicEngine {
     const theme = progressions[song.synthTheme] || progressions.pop;
     const beatsPerMeasure = song.timeSignature.startsWith('3') ? 3 : song.timeSignature.startsWith('6') ? 6 : song.timeSignature.startsWith('7') ? 7 : 4;
     const measureDuration = beatSec * beatsPerMeasure;
-    const numMeasures = Math.ceil(totalDuration / measureDuration) + 1;
+    const totalMeasures = Math.ceil(song.duration / measureDuration) + 1;
 
-    for (let m = 0; m < numMeasures; m++) {
+    while (
+      this.lastScheduledMeasure < totalMeasures &&
+      this.lastScheduledMeasure * measureDuration < lookaheadTime
+    ) {
+      const m = this.lastScheduledMeasure;
       const measureStartTime = m * measureDuration;
-      if (measureStartTime + measureDuration < startOffset) continue;
 
       const chordIndex = m % theme.chords.length;
       const currentChord = theme.chords[chordIndex];
@@ -372,9 +402,8 @@ class MusicEngine {
 
       bassTimes.forEach((bOffset) => {
         const noteSongTime = measureStartTime + bOffset;
-        if (noteSongTime < startOffset || noteSongTime >= totalDuration) return;
-        const targetCtxTime = audioStartTime + noteSongTime;
-
+        if (noteSongTime < currentTime - 0.05 || noteSongTime >= song.duration) return;
+        const targetCtxTime = this.startTime + noteSongTime;
         this.synthesizeSynthBass(targetCtxTime, rootBass, beatSec * 0.7);
       });
 
@@ -389,8 +418,8 @@ class MusicEngine {
 
       chordTimes.forEach((cOffset) => {
         const noteSongTime = measureStartTime + cOffset;
-        if (noteSongTime < startOffset || noteSongTime >= totalDuration) return;
-        const targetCtxTime = audioStartTime + noteSongTime;
+        if (noteSongTime < currentTime - 0.05 || noteSongTime >= song.duration) return;
+        const targetCtxTime = this.startTime + noteSongTime;
 
         currentChord.forEach((freq) => {
           this.synthesizeChordTone(targetCtxTime, freq, beatSec * 0.45);
@@ -403,12 +432,14 @@ class MusicEngine {
 
       for (let s = 0; s < melodySubdivisions; s++) {
         const noteSongTime = measureStartTime + s * subDuration;
-        if (noteSongTime < startOffset || noteSongTime >= totalDuration) continue;
-        const targetCtxTime = audioStartTime + noteSongTime;
+        if (noteSongTime < currentTime - 0.05 || noteSongTime >= song.duration) continue;
+        const targetCtxTime = this.startTime + noteSongTime;
 
         const melodyFreq = theme.melody[(m * melodySubdivisions + s) % theme.melody.length];
         this.synthesizeLeadNote(targetCtxTime, melodyFreq, subDuration * 0.6);
       }
+
+      this.lastScheduledMeasure++;
     }
   }
 
@@ -438,6 +469,7 @@ class MusicEngine {
     osc.stop(targetTime + duration + 0.05);
 
     this.synthNodes.push({
+      stopTime: targetTime + duration + 0.05,
       stop: () => {
         try {
           osc.stop();
@@ -472,6 +504,7 @@ class MusicEngine {
     osc.stop(targetTime + duration + 0.05);
 
     this.synthNodes.push({
+      stopTime: targetTime + duration + 0.05,
       stop: () => {
         try {
           osc.stop();
@@ -507,6 +540,7 @@ class MusicEngine {
     osc.stop(targetTime + duration + 0.05);
 
     this.synthNodes.push({
+      stopTime: targetTime + duration + 0.05,
       stop: () => {
         try {
           osc.stop();

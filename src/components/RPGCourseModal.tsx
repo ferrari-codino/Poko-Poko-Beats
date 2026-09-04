@@ -22,15 +22,16 @@ export const RPGCourseModal: React.FC<RPGCourseModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentTierInfo = RPG_TIERS[selectedTier];
-  const coach: RPGCoach = RPG_COACHES[selectedTier];
+  const currentTierInfo = RPG_TIERS[selectedTier] || RPG_TIERS.beginner;
+  const coach: RPGCoach = RPG_COACHES[selectedTier] || RPG_COACHES.beginner;
+  const clearedLevels = rpgProgress?.clearedLevels || {};
 
   // Calculate starting level for the selected course:
   // Rule: Player starts at the first level of that course (初級: 1, 中級: 21, 上級: 61).
   // If already cleared, starts at the next uncleared level!
   let startingLevel = currentTierInfo.minLevel;
   for (let lvl = currentTierInfo.minLevel; lvl <= currentTierInfo.maxLevel; lvl++) {
-    if (!rpgProgress.clearedLevels[lvl]) {
+    if (!clearedLevels[lvl]) {
       startingLevel = lvl;
       break;
     }
@@ -46,7 +47,7 @@ export const RPGCourseModal: React.FC<RPGCourseModalProps> = ({
   // Count cleared levels in this tier
   let clearedInTier = 0;
   for (let l = currentTierInfo.minLevel; l <= currentTierInfo.maxLevel; l++) {
-    if (rpgProgress.clearedLevels[l]) clearedInTier++;
+    if (clearedLevels[l]) clearedInTier++;
   }
 
   return (

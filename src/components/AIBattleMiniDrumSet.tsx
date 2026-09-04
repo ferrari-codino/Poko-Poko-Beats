@@ -5,24 +5,44 @@ import { Bot, Trophy, Flame, AlertCircle } from 'lucide-react';
 
 interface AIBattleMiniDrumSetProps {
   aiLevel: AILevel;
-  aiState: AIBattleState;
-  playerScore: number;
-  playerCombo: number;
+  aiState?: AIBattleState;
+  playerScore?: number;
+  playerCombo?: number;
   isFever?: boolean;
+  // Alternative loose props for compatibility
+  aiScore?: number;
+  aiCombo?: number;
+  aiAccuracy?: number;
+  lastHitPart?: DrumPartId | null;
+  lastJudgment?: JudgmentType | null;
+  deviceMode?: 'mobile' | 'tablet' | 'desktop';
 }
 
 export const AIBattleMiniDrumSet: React.FC<AIBattleMiniDrumSetProps> = ({
   aiLevel,
   aiState,
-  playerScore,
-  playerCombo,
+  playerScore = 0,
+  playerCombo = 0,
+  isFever = false,
+  aiScore,
+  aiCombo,
+  aiAccuracy,
+  lastHitPart,
+  lastJudgment,
 }) => {
   const profile = AI_LEVEL_PROFILES[aiLevel] || AI_LEVEL_PROFILES.intermediate;
-  const scoreDiff = playerScore - aiState.score;
+  
+  const effectiveScore = aiState?.score ?? aiScore ?? 0;
+  const effectiveCombo = aiState?.combo ?? aiCombo ?? 0;
+  const effectiveAccuracy = aiState?.accuracy ?? aiAccuracy ?? 100;
+  const effectivePart = aiState?.activePart ?? lastHitPart ?? null;
+  const effectiveLastJudgment = aiState?.lastJudgment ?? lastJudgment ?? null;
+
+  const scoreDiff = playerScore - effectiveScore;
   const isPlayerWinning = scoreDiff >= 0;
 
   // Active hit drum part feedback in mini drum set
-  const activePart = aiState.activePart;
+  const activePart = effectivePart;
 
   return (
     <div className="flex flex-col items-center justify-between w-full h-full p-2 bg-gradient-to-b from-slate-900/95 to-slate-950/95 border-2 border-indigo-500/40 rounded-3xl shadow-2xl relative overflow-hidden backdrop-blur-md select-none">
@@ -54,7 +74,7 @@ export const AIBattleMiniDrumSet: React.FC<AIBattleMiniDrumSetProps> = ({
               </span>
             </div>
             <span className="text-[9px] text-slate-400 font-mono">
-              AI精度: {aiState.accuracy}%
+              AI精度: {effectiveAccuracy}%
             </span>
           </div>
         </div>
@@ -87,20 +107,20 @@ export const AIBattleMiniDrumSet: React.FC<AIBattleMiniDrumSetProps> = ({
         <div className="absolute inset-1 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner -z-0" />
 
         {/* AI Hit Judgment Floating Badge */}
-        {aiState.lastJudgment && (
+        {effectiveLastJudgment && (
           <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 pointer-events-none animate-in fade-in zoom-in-90 duration-150">
             <span
               className={`px-2 py-0.5 rounded-full text-[9px] font-black font-mono shadow border ${
-                aiState.lastJudgment === 'PERFECT'
+                effectiveLastJudgment === 'PERFECT'
                   ? 'bg-amber-500/90 text-slate-950 border-amber-300'
-                  : aiState.lastJudgment === 'GREAT'
+                  : effectiveLastJudgment === 'GREAT'
                   ? 'bg-cyan-500/90 text-slate-950 border-cyan-300'
-                  : aiState.lastJudgment === 'GOOD'
+                  : effectiveLastJudgment === 'GOOD'
                   ? 'bg-emerald-500/90 text-slate-950 border-emerald-300'
                   : 'bg-rose-600/90 text-white border-rose-400'
               }`}
             >
-              {aiState.lastJudgment === 'MISS' ? 'MISS 💦' : aiState.lastJudgment}
+              {effectiveLastJudgment === 'MISS' ? 'MISS 💦' : effectiveLastJudgment}
             </span>
           </div>
         )}
@@ -207,11 +227,11 @@ export const AIBattleMiniDrumSet: React.FC<AIBattleMiniDrumSetProps> = ({
       <div className="w-full flex items-center justify-between pt-1 border-t border-slate-800 text-[10px] font-mono">
         <div className="flex items-center gap-1 text-slate-300">
           <span>AI SCORE:</span>
-          <strong className="text-white font-bold">{aiState.score.toLocaleString()}</strong>
+          <strong className="text-white font-bold">{effectiveScore.toLocaleString()}</strong>
         </div>
         <div className="flex items-center gap-1 text-amber-300 font-bold">
           <Flame className="w-3 h-3 text-amber-400" />
-          <span>{aiState.combo} COMBO</span>
+          <span>{effectiveCombo} COMBO</span>
         </div>
       </div>
     </div>

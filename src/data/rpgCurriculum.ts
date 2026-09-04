@@ -593,7 +593,12 @@ export function loadRPGProgress(): RPGProgress {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed.currentLevel === 'number') {
-        return parsed;
+        return {
+          currentLevel: parsed.currentLevel,
+          highestClearedLevel: typeof parsed.highestClearedLevel === 'number' ? parsed.highestClearedLevel : 0,
+          clearedLevels: parsed.clearedLevels && typeof parsed.clearedLevels === 'object' ? parsed.clearedLevels : {},
+          activeTier: parsed.activeTier || 'beginner',
+        };
       }
     }
   } catch {}
