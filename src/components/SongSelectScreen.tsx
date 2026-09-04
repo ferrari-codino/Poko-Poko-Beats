@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { SongData, Difficulty, UserProfile, SongCategory } from '../types';
+import { SongData, Difficulty, UserProfile, SongCategory, DeviceMode } from '../types';
 import { SONGS, SONG_CATEGORIES } from '../data/songs';
 import { MASCOTS } from '../data/mascots';
 import { getRPGLevelConfig } from '../data/rpgCurriculum';
@@ -46,6 +46,7 @@ interface SongSelectScreenProps {
   onOpenMyDrumSet?: () => void;
   aiBattleEnabled?: boolean;
   onToggleAIBattle?: () => void;
+  deviceMode?: DeviceMode;
 }
 
 export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
@@ -72,10 +73,14 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
   onOpenMyDrumSet,
   aiBattleEnabled = false,
   onToggleAIBattle,
+  deviceMode = 'smartphone',
 }) => {
   const currentDiffInfo = selectedSong.difficulties[selectedDifficulty];
   const mascot = MASCOTS[currentUser?.avatarId || 'pokota'] || MASCOTS.pokota;
   const currentLevelConfig = getRPGLevelConfig(rpgLevel || 1);
+
+  // Split Screen Modes: 'lesson' (初期値: レッスンモード) or 'songSelect' (曲と難易度を選択し演奏スタートするモード)
+  const [activeScreenMode, setActiveScreenMode] = useState<'lesson' | 'songSelect'>('lesson');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | SongCategory>('ALL');
@@ -157,10 +162,13 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             🥁
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <h1 className="text-base sm:text-lg font-black text-white leading-tight">
                 Poko-Poko Beats
               </h1>
+              <span className="text-[10px] font-mono font-black px-1.5 py-0.2 rounded-md bg-pink-500/25 text-pink-300 border border-pink-400/50 shadow-sm">
+                v0.70
+              </span>
               <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 font-black border border-amber-400/50 shadow-sm">
                 <span>👑</span>
                 <span>USER Lv.{rpgLevel || 1}</span>
@@ -215,18 +223,18 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             </button>
           )}
 
-          {/* Tablet Dedicated Feature 2: AI Battle Mode Toggle Button */}
-          {onToggleAIBattle && (
+          {/* Tablet Dedicated Feature 2: AI Battle Mode Toggle Button (タブレットモード限定) */}
+          {deviceMode === 'tablet' && onToggleAIBattle && (
             <button
               id="song-select-ai-battle-btn"
               type="button"
               onClick={onToggleAIBattle}
-              className={`hidden sm:flex px-2.5 py-1.5 rounded-2xl text-xs font-black border items-center gap-1.5 transition shadow-sm ${
+              className={`flex px-2.5 py-1.5 rounded-2xl text-xs font-black border items-center gap-1.5 transition shadow-sm ${
                 aiBattleEnabled
                   ? 'bg-purple-500/30 text-purple-200 border-purple-400/60 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
                   : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 border-slate-800'
               }`}
-              title="AI対戦モードのON/OFF切り替え"
+              title="タブレット専用: AI対戦モードのON/OFF切り替え"
             >
               <Swords className={`w-3.5 h-3.5 ${aiBattleEnabled ? 'text-purple-300 animate-pulse' : 'text-slate-500'}`} />
               <span>AI対戦</span>
@@ -343,386 +351,524 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
         </button>
       )}
 
-      {/* RPG TRAINING & COACH PROMOTION BANNER (プレイヤーを初級レッスンへ惹きつける誘導カード) */}
-      {onOpenRPGModal && (
-        <div className="w-full mb-2.5 p-3 rounded-2xl bg-gradient-to-r from-pink-950/70 via-purple-950/60 to-slate-900/80 border-2 border-pink-400/60 shadow-[0_0_20px_rgba(244,114,182,0.15)] relative overflow-hidden group">
-          {/* Subtle Glow Accents */}
-          <div className="absolute -right-8 -top-8 w-28 h-28 bg-pink-500/20 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-8 -bottom-8 w-28 h-28 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
+      {/* SCREEN MODE SPLIT SWITCH (①レッスンモード [初期値] と 曲・難易度選択演奏モードの画面分割) */}
+      <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-900/95 border-2 border-slate-800 shadow-lg mb-3 shrink-0">
+        <button
+          id="mode-tab-lesson-btn"
+          type="button"
+          onClick={() => setActiveScreenMode('lesson')}
+          className={`py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            activeScreenMode === 'lesson'
+              ? 'bg-gradient-to-r from-amber-400 via-pink-500 to-rose-500 text-slate-950 shadow-lg shadow-pink-500/25 border-2 border-white/60 scale-[1.01]'
+              : 'text-slate-400 hover:text-white bg-slate-950/50 border border-slate-800/80'
+          }`}
+        >
+          <span className="text-base">🥁</span>
+          <span>レッスンモード</span>
+          <span
+            className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold border ${
+              activeScreenMode === 'lesson'
+                ? 'bg-black/30 text-white border-black/20'
+                : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+            }`}
+          >
+            初期値
+          </span>
+        </button>
 
-          {/* Top Recommendation Badge */}
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-black tracking-wide shadow-sm animate-pulse">
-              <span>🔰</span>
-              <span>おすすめ！ ゼロから上達ステップアップ</span>
-            </div>
-            <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40">
-              👑 PLAYER Lv.{rpgLevel}
-            </span>
-          </div>
+        <button
+          id="mode-tab-song-select-btn"
+          type="button"
+          onClick={() => setActiveScreenMode('songSelect')}
+          className={`py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            activeScreenMode === 'songSelect'
+              ? 'bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-white shadow-lg shadow-cyan-500/25 border-2 border-white/60 scale-[1.01]'
+              : 'text-slate-400 hover:text-white bg-slate-950/50 border border-slate-800/80'
+          }`}
+        >
+          <span className="text-base">🎵</span>
+          <span>曲と難易度を選んで演奏</span>
+        </button>
+      </div>
 
-          {/* Card Body: Level Info & Lesson Goals */}
-          <div className="flex items-start gap-3 mb-2.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center text-2xl shadow-lg border-2 border-white/60 shrink-0">
-              🥁
+      {activeScreenMode === 'lesson' ? (
+        /* ========================================================
+           SCREEN 1: LESSON MODE (ドラムレッスン・RPGステップアップモード)
+           縦領域を圧迫せず、レッスン内容と開始ボタンがすぐ目の前で押せる！
+           ======================================================== */
+        <div className="flex-1 flex flex-col justify-start space-y-3 animate-fade-in pb-20 sm:pb-4">
+          {/* Main Active Lesson Card */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-pink-950/80 via-purple-950/70 to-slate-900/90 border-2 border-pink-400/70 shadow-2xl relative overflow-hidden space-y-3.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-black shadow-md">
+                <span>🔰</span>
+                <span>ステップアップ ドラムレッスン</span>
+              </div>
+              <span className="text-xs font-mono font-black px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm">
+                👑 PLAYER Lv.{rpgLevel || 1}
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h2 className="text-xs sm:text-sm font-black text-white leading-tight">
-                  ドラムレッスン（ステップアップ）
+
+            <div className="flex items-start gap-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center text-3xl shadow-xl border-2 border-white shrink-0">
+                🥁
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold text-pink-300 bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/30">
+                    {rpgLevel <= 20 ? '初級コース (基礎ビート編)' : rpgLevel <= 60 ? '中級コース (シンコペーション編)' : '上級コース (プロフィルイン編)'}
+                  </span>
+                </div>
+                <h2 className="text-base sm:text-lg font-black text-white mt-1 leading-snug">
+                  {currentLevelConfig?.title || `Level ${rpgLevel}: はじめのドン！`}
                 </h2>
-                <span className="text-[10px] text-pink-300 font-bold bg-pink-500/20 px-1.5 py-0.2 rounded border border-pink-500/30">
-                  {rpgLevel <= 20 ? '初級コース' : rpgLevel <= 60 ? '中級コース' : '上級コース'}
-                </span>
+                <p className="text-xs text-amber-200/90 font-medium mt-1 leading-relaxed">
+                  {rpgLevel === 1
+                    ? '🎵 課題曲: はじめてのマーチ (ゆったりBPM 60・光ガイド1.5秒前・足だけで安心クリア！)'
+                    : currentLevelConfig?.focusLesson}
+                </p>
               </div>
-              <div className="text-[11px] font-black text-amber-300 mt-0.5 truncate">
-                {currentLevelConfig?.title || `Level ${rpgLevel}: はじめのドン！`}
-              </div>
-              <p className="text-[10px] text-slate-300 line-clamp-1 mt-0.5">
-                {rpgLevel === 1
-                  ? '🎵 課題曲: はじめてのマーチ (ゆったりBPM 60・光ガイド1.5秒前・足だけで安心クリア！)'
-                  : currentLevelConfig?.focusLesson}
-              </p>
             </div>
-          </div>
 
-          {/* Action Buttons: Direct Start & Curriculum Overview */}
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-pink-500/20">
-            {/* Direct Level 1 / Current Level Start Button */}
+            {/* Clear Goal & Requirements */}
+            <div className="p-3 rounded-2xl bg-black/40 border border-white/10 grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="text-base">🎯</span>
+                <div>
+                  <div className="text-[10px] text-slate-400 font-bold">目標クリアスコア</div>
+                  <div className="font-mono font-black text-amber-300">
+                    {currentLevelConfig?.clearMinScore ? `${currentLevelConfig.clearMinScore.toLocaleString()} 点` : '20,000 点'}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-slate-300">
+                <span className="text-base">⏱️</span>
+                <div>
+                  <div className="text-[10px] text-slate-400 font-bold">テンポ / 難易度</div>
+                  <div className="font-mono font-black text-cyan-300">
+                    BPM {currentLevelConfig?.bpm || 60}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* PRIMARY UNMISSABLE LESSON START BUTTON */}
             <button
               id="start-current-rpg-level-btn"
               type="button"
               onClick={() => {
                 if (onStartRPGLevel) {
                   onStartRPGLevel(rpgLevel || 1);
-                } else {
+                } else if (onOpenRPGModal) {
                   onOpenRPGModal();
                 }
               }}
-              className="py-2 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white font-black text-xs shadow-md border border-pink-300/50 flex items-center justify-center gap-1.5 transition-all active:scale-95 group/btn"
+              className="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-pink-500 to-rose-500 hover:from-amber-300 hover:to-rose-400 active:scale-98 text-slate-950 font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-2xl shadow-pink-500/40 border-2 border-white/80 transition-all cursor-pointer"
             >
-              <Play className="w-3.5 h-3.5 fill-current text-white group-hover/btn:scale-110 transition-transform" />
+              <Play className="w-5 h-5 fill-current text-slate-950" />
               <span>
-                {rpgLevel === 1 ? '▶ 今すぐLv.1をスタート！' : `▶ Lv.${rpgLevel} レッスン開始`}
+                {rpgLevel === 1 ? '🌟 今すぐ第1回レッスンを演奏スタート！' : `🌟 Lv.${rpgLevel} レッスンの演奏をスタート！`}
               </span>
             </button>
 
-            {/* View Full Curriculum Modal Button */}
-            <button
-              id="open-rpg-curriculum-modal-btn"
-              type="button"
-              onClick={onOpenRPGModal}
-              className="py-2 px-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-pink-300 font-bold text-xs border border-slate-700/80 flex items-center justify-center gap-1 transition-all active:scale-95"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>全100段階カリキュラム ▷</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* MODE BUTTONS: Course Mode, Random, Free Play, Ranking */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2">
-        {/* 1. おまかせ (RANDOM) BUTTON */}
-        <button
-          id="random-song-btn"
-          type="button"
-          onClick={() => handleRandomSelect(false)}
-          className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-2xl font-black text-xs border shadow-sm transition-all active:scale-95 ${
-            isRouletteRolling
-              ? 'bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 animate-pulse border-white'
-              : 'bg-gradient-to-r from-pink-500/25 to-rose-500/25 text-pink-300 hover:from-pink-500/35 hover:to-rose-500/35 border-pink-500/40'
-          }`}
-          title="ランダムで曲を決定します"
-        >
-          <Shuffle className={`w-3.5 h-3.5 ${isRouletteRolling ? 'animate-spin' : ''}`} />
-          <span>おまかせ (RANDOM)</span>
-        </button>
-
-        {/* 2. 連続コースモード BUTTON */}
-        <button
-          id="open-course-mode-btn"
-          type="button"
-          onClick={onOpenCourseModal}
-          className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-2xl bg-gradient-to-r from-amber-500/25 to-yellow-500/25 hover:from-amber-500/35 text-amber-300 font-black text-xs border border-amber-500/40 shadow-sm transition-all active:scale-95"
-          title="クリア後、自動で次の曲に連続で進むコースモード"
-        >
-          <Flame className="w-3.5 h-3.5 text-amber-400" />
-          <span>連続コースモード</span>
-        </button>
-
-        {/* 3. フリー練習モード BUTTON */}
-        <button
-          id="open-freeplay-btn"
-          type="button"
-          onClick={onOpenFreePlay}
-          className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-2xl border border-slate-800 shadow-sm transition active:scale-95"
-        >
-          <span>🥁</span>
-          <span>フリー練習</span>
-        </button>
-
-        {/* 4. 全国TOP30ランキング BUTTON */}
-        <button
-          id="open-ranking-btn"
-          type="button"
-          onClick={onOpenLeaderboard}
-          className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-2xl border border-slate-800 shadow-sm transition active:scale-95"
-        >
-          <Trophy className="w-3.5 h-3.5 text-amber-400" />
-          <span>全国ランキング</span>
-        </button>
-      </div>
-
-      {/* ROULETTE BANNER IF ROLLING */}
-      {isRouletteRolling && (
-        <div className="mb-2 p-2 rounded-2xl bg-gradient-to-r from-pink-500/30 to-amber-500/30 border border-amber-400/60 text-center animate-bounce">
-          <div className="text-[10px] text-amber-300 font-bold uppercase">ルーレット回転中... 🎲</div>
-          <div className="text-sm font-black text-white truncate">{rouletteSongTitle}</div>
-        </div>
-      )}
-
-      {/* SEARCH BAR & GENRE TABS */}
-      <div className="space-y-1.5 mb-2">
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="全100曲から検索 (曲名・ジャンル・BPM...)"
-            className="w-full pl-8 pr-7 py-1.5 bg-slate-950/70 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Genre Category Chips */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
-          {SONG_CATEGORIES.map((cat) => {
-            const isActive = selectedCategory === cat;
-            return (
+            {/* View Full Curriculum Stages Button */}
+            {onOpenRPGModal && (
               <button
-                key={cat}
+                id="open-rpg-curriculum-modal-btn"
                 type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${
-                  isActive
-                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-sm scale-102 ring-1 ring-white/40'
-                    : 'bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800'
-                }`}
+                onClick={onOpenRPGModal}
+                className="w-full py-2.5 px-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-pink-300 border border-slate-700/80 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-98"
               >
-                {cat === 'ALL' ? `全曲 (${SONGS.length})` : cat}
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>全100段階カリキュラム一覧・到達マップを見る ▷</span>
               </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* SONG SELECTION LIST */}
-      <div
-        ref={songListRef}
-        className="flex flex-col gap-1.5 overflow-y-auto max-h-[260px] sm:max-h-[300px] mb-3 pr-1 custom-scrollbar shrink-0"
-      >
-        {filteredSongs.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-xs">
-            該当する楽曲が見つかりませんでした。
+            )}
           </div>
-        ) : (
-          filteredSongs.map((song) => {
-            const isSelected = song.id === selectedSong.id;
-            const isHardcore = song.bpm >= 200 || song.timeSignature.includes('8');
 
-            return (
-              <div
-                id={`song-card-${song.id}`}
-                key={song.id}
-                onClick={() => {
-                  onSelectSong(song);
-                  setTimeout(() => {
-                    const el = document.getElementById('difficulty-start-panel');
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                  }, 60);
-                }}
-                className={`p-2.5 rounded-2xl border cursor-pointer transition-all ${
-                  isSelected
-                    ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-pink-400 shadow-[0_0_16px_rgba(244,114,182,0.25)] ring-2 ring-pink-400/40'
-                    : 'bg-slate-900/70 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-md text-xs border border-white/30 shrink-0"
-                      style={{ backgroundColor: song.previewColor }}
-                    >
-                      <Music2 className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-black text-xs sm:text-sm text-white truncate">
-                          {song.title}
-                        </span>
-                        {song.id === 'baby-march' && (
-                          <span className="text-[8px] px-1.5 py-0.2 rounded bg-pink-500/30 text-pink-300 border border-pink-400/50 font-black shrink-0 animate-pulse flex items-center gap-0.5">
-                            <span>🔰</span>
-                            <span>レッスンLv.1 対象曲</span>
-                          </span>
-                        )}
-                        {song.category && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-medium shrink-0">
-                            {song.category}
-                          </span>
-                        )}
-                        {isHardcore && (
-                          <span className="text-[8px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold shrink-0">
-                            ⚡超絶
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-slate-400 truncate">{song.subtitle}</div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-0.5 shrink-0 ml-2">
-                    <span className="font-mono text-[11px] text-amber-300 font-bold flex items-center gap-0.5">
-                      <Activity className="w-3 h-3 text-amber-400" />
-                      {song.bpm} BPM
-                    </span>
-                    <span className="font-mono text-[9px] text-cyan-300 font-bold bg-cyan-950/70 px-1.5 py-0.2 rounded border border-cyan-800/40">
-                      {song.timeSignature}拍子 • {song.duration}秒
-                    </span>
-                  </div>
-                </div>
-
-                {isSelected && (
-                  <div className="mt-1.5 pt-1.5 border-t border-slate-800/80 text-[10px] text-pink-200/90 flex items-center justify-between">
-                    <span className="truncate pr-2">{song.description}</span>
-                    <span className="text-slate-400 font-mono flex items-center gap-1 shrink-0">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      {song.duration}秒
-                    </span>
-                  </div>
-                )}
+          {/* Secondary Utilities */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onOpenFreePlay}
+              className="p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-left transition"
+            >
+              <div className="flex items-center gap-1.5 text-xs font-black text-slate-200">
+                <span>🥁</span>
+                <span>フリードラム練習</span>
               </div>
-            );
-          })
-        )}
-      </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">譜面なしで自由にビートを叩く</p>
+            </button>
 
-      {/* DIFFICULTY SELECTOR & SONG START PANEL */}
-      <div
-        id="difficulty-start-panel"
-        className="bg-slate-900/95 border-2 border-pink-400/30 rounded-3xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md shrink-0 mb-3"
-      >
-        {/* Difficulty Tabs Header */}
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-black text-white flex items-center gap-1">
-            <span>⭐</span> 難易度を選択
-          </span>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: currentDiffInfo.starRating }).map((_, i) => (
-              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-            ))}
-            <span className="text-[10px] text-slate-400 font-mono ml-1">
-              ({currentDiffInfo.noteCount} ノーツ)
-            </span>
+            <button
+              type="button"
+              onClick={onOpenLeaderboard}
+              className="p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-left transition"
+            >
+              <div className="flex items-center gap-1.5 text-xs font-black text-amber-300">
+                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <span>全国ランキング</span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">全国のハイスコアをチェック</p>
+            </button>
+          </div>
+
+          {/* Mode Switch Helper Card */}
+          <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+            <p className="text-xs text-slate-300">
+              全100曲から好きな曲・難易度（EASY〜MASTER）を選んで演奏したい時はこちら！
+            </p>
+            <button
+              id="switch-to-song-select-mode-btn"
+              type="button"
+              onClick={() => setActiveScreenMode('songSelect')}
+              className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:opacity-95 text-white font-black text-xs flex items-center justify-center gap-2 mx-auto transition-all shadow-md active:scale-98"
+            >
+              <Music2 className="w-4 h-4" />
+              <span>🎵 曲・難易度選択モードへ移動する ➜</span>
+            </button>
+          </div>
+
+          {/* Mobile floating quick lesson start bar */}
+          <div className="fixed sm:hidden bottom-3 left-3 right-3 z-40 flex items-center justify-between gap-2 p-2.5 px-3.5 rounded-2xl bg-slate-950/95 border-2 border-pink-500/70 shadow-[0_0_24px_rgba(236,72,153,0.35)] backdrop-blur-xl">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-white truncate max-w-[150px]">
+                  Lv.{rpgLevel || 1} {currentLevelConfig?.title || 'はじめのドン！'}
+                </span>
+              </div>
+              <div className="text-[9px] text-amber-300 font-mono flex items-center gap-1 mt-0.5">
+                <span>⚡ BPM {currentLevelConfig?.bpm || 60}</span>
+                <span>•</span>
+                <span>レッスンモード</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (onStartRPGLevel) {
+                  onStartRPGLevel(rpgLevel || 1);
+                } else if (onOpenRPGModal) {
+                  onOpenRPGModal();
+                }
+              }}
+              className="py-2.5 px-4 bg-gradient-to-r from-amber-400 via-pink-500 to-rose-500 active:scale-95 text-slate-950 font-black rounded-xl shadow-lg flex items-center gap-1.5 text-xs shrink-0 transition-transform"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>レッスン開始！🌟</span>
+            </button>
           </div>
         </div>
+      ) : (
+        /* ========================================================
+           SCREEN 2: SONG & DIFFICULTY SELECT & PLAY START MODE
+           全曲リスト & 難易度選択 & 演奏スタートボタン
+           ======================================================== */
+        <div className="flex-1 flex flex-col justify-start space-y-2 animate-fade-in pb-20 sm:pb-4">
+          {/* MODE BUTTONS: Random, Course Mode, Free Play, Ranking */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-1 shrink-0">
+            {/* 1. おまかせ (RANDOM) BUTTON */}
+            <button
+              id="random-song-btn"
+              type="button"
+              onClick={() => handleRandomSelect(false)}
+              className={`flex items-center justify-center gap-1 py-1.5 px-2 rounded-2xl font-black text-xs border shadow-sm transition-all active:scale-95 ${
+                isRouletteRolling
+                  ? 'bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 animate-pulse border-white'
+                  : 'bg-gradient-to-r from-pink-500/25 to-rose-500/25 text-pink-300 hover:from-pink-500/35 hover:to-rose-500/35 border-pink-500/40'
+              }`}
+              title="ランダムで曲を決定します"
+            >
+              <Shuffle className={`w-3.5 h-3.5 ${isRouletteRolling ? 'animate-spin' : ''}`} />
+              <span>おまかせ (RANDOM)</span>
+            </button>
 
-        {/* Difficulty Buttons */}
-        <div className="grid grid-cols-4 gap-1.5 mb-2.5">
-          {(['easy', 'normal', 'hard', 'master'] as Difficulty[]).map((diff) => {
-            const isDiffActive = selectedDifficulty === diff;
-            const diffTheme =
-              diff === 'easy'
-                ? 'from-emerald-500 to-teal-500'
-                : diff === 'normal'
-                ? 'from-cyan-500 to-blue-500'
-                : diff === 'hard'
-                ? 'from-amber-500 to-orange-500'
-                : 'from-purple-600 to-pink-600';
+            {/* 2. 連続コースモード BUTTON */}
+            <button
+              id="open-course-mode-btn"
+              type="button"
+              onClick={onOpenCourseModal}
+              className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-2xl bg-gradient-to-r from-amber-500/25 to-yellow-500/25 hover:from-amber-500/35 text-amber-300 font-black text-xs border border-amber-500/40 shadow-sm transition-all active:scale-95"
+              title="クリア後、自動で次の曲に連続で進むコースモード"
+            >
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span>連続コースモード</span>
+            </button>
 
-            return (
+            {/* 3. フリー練習モード BUTTON */}
+            <button
+              id="open-freeplay-btn"
+              type="button"
+              onClick={onOpenFreePlay}
+              className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-2xl border border-slate-800 shadow-sm transition active:scale-95"
+            >
+              <span>🥁</span>
+              <span>フリー練習</span>
+            </button>
+
+            {/* 4. 全国TOP30ランキング BUTTON */}
+            <button
+              id="open-ranking-btn"
+              type="button"
+              onClick={onOpenLeaderboard}
+              className="flex items-center justify-center gap-1 py-1.5 px-2 bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-2xl border border-slate-800 shadow-sm transition active:scale-95"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span>全国ランキング</span>
+            </button>
+          </div>
+
+          {/* ROULETTE BANNER IF ROLLING */}
+          {isRouletteRolling && (
+            <div className="p-2 rounded-2xl bg-gradient-to-r from-pink-500/30 to-amber-500/30 border border-amber-400/60 text-center animate-bounce">
+              <div className="text-[10px] text-amber-300 font-bold uppercase">ルーレット回転中... 🎲</div>
+              <div className="text-sm font-black text-white truncate">{rouletteSongTitle}</div>
+            </div>
+          )}
+
+          {/* SEARCH BAR & GENRE TABS */}
+          <div className="space-y-1.5 mb-1 shrink-0">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="全100曲から検索 (曲名・ジャンル・BPM...)"
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-950/70 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Genre Category Chips */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar">
+              {SONG_CATEGORIES.map((cat) => {
+                const isActive = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-sm scale-102 ring-1 ring-white/40'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    {cat === 'ALL' ? `全曲 (${SONGS.length})` : cat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SONG SELECTION LIST */}
+          <div
+            ref={songListRef}
+            className="flex flex-col gap-1.5 overflow-y-auto max-h-[240px] sm:max-h-[300px] mb-2 pr-1 custom-scrollbar shrink-0"
+          >
+            {filteredSongs.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-xs">
+                該当する楽曲が見つかりませんでした。
+              </div>
+            ) : (
+              filteredSongs.map((song) => {
+                const isSelected = song.id === selectedSong.id;
+                const isHardcore = song.bpm >= 200 || song.timeSignature.includes('8');
+
+                return (
+                  <div
+                    id={`song-card-${song.id}`}
+                    key={song.id}
+                    onClick={() => {
+                      onSelectSong(song);
+                      setTimeout(() => {
+                        const el = document.getElementById('difficulty-start-panel');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                      }, 60);
+                    }}
+                    className={`p-2.5 rounded-2xl border cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-cyan-400 shadow-[0_0_16px_rgba(34,211,238,0.25)] ring-2 ring-cyan-400/40'
+                        : 'bg-slate-900/70 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shadow-md text-xs border border-white/30 shrink-0"
+                          style={{ backgroundColor: song.previewColor }}
+                        >
+                          <Music2 className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-black text-xs sm:text-sm text-white truncate">
+                              {song.title}
+                            </span>
+                            {song.id === 'baby-march' && (
+                              <span className="text-[8px] px-1.5 py-0.2 rounded bg-pink-500/30 text-pink-300 border border-pink-400/50 font-black shrink-0 animate-pulse flex items-center gap-0.5">
+                                <span>🔰</span>
+                                <span>レッスンLv.1 対象曲</span>
+                              </span>
+                            )}
+                            {song.category && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-medium shrink-0">
+                                {song.category}
+                              </span>
+                            )}
+                            {isHardcore && (
+                              <span className="text-[8px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold shrink-0">
+                                ⚡超絶
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate">{song.subtitle}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-0.5 shrink-0 ml-2">
+                        <span className="font-mono text-[11px] text-amber-300 font-bold flex items-center gap-0.5">
+                          <Activity className="w-3 h-3 text-amber-400" />
+                          {song.bpm} BPM
+                        </span>
+                        <span className="font-mono text-[9px] text-cyan-300 font-bold bg-cyan-950/70 px-1.5 py-0.2 rounded border border-cyan-800/40">
+                          {song.timeSignature}拍子 • {song.duration}秒
+                        </span>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div className="mt-1.5 pt-1.5 border-t border-slate-800/80 text-[10px] text-cyan-200/90 flex items-center justify-between">
+                        <span className="truncate pr-2">{song.description}</span>
+                        <span className="text-slate-400 font-mono flex items-center gap-1 shrink-0">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          {song.duration}秒
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* DIFFICULTY SELECTOR & SONG START PANEL */}
+          <div
+            id="difficulty-start-panel"
+            className="bg-slate-900/95 border-2 border-cyan-400/40 rounded-3xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md shrink-0 mb-3"
+          >
+            {/* Difficulty Tabs Header */}
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-black text-white flex items-center gap-1">
+                <span>⭐</span> 難易度を選択
+              </span>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: currentDiffInfo.starRating }).map((_, i) => (
+                  <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                ))}
+                <span className="text-[10px] text-slate-400 font-mono ml-1">
+                  ({currentDiffInfo.noteCount} ノーツ)
+                </span>
+              </div>
+            </div>
+
+            {/* Difficulty Buttons */}
+            <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+              {(['easy', 'normal', 'hard', 'master'] as Difficulty[]).map((diff) => {
+                const isDiffActive = selectedDifficulty === diff;
+                const diffTheme =
+                  diff === 'easy'
+                    ? 'from-emerald-500 to-teal-500'
+                    : diff === 'normal'
+                    ? 'from-cyan-500 to-blue-500'
+                    : diff === 'hard'
+                    ? 'from-amber-500 to-orange-500'
+                    : 'from-purple-600 to-pink-600';
+
+                return (
+                  <button
+                    id={`diff-btn-${diff}`}
+                    key={diff}
+                    type="button"
+                    onClick={() => onSelectDifficulty(diff)}
+                    className={`py-1.5 rounded-2xl text-[11px] font-black uppercase transition-all ${
+                      isDiffActive
+                        ? `bg-gradient-to-r ${diffTheme} text-white shadow-md scale-102 ring-2 ring-white/40`
+                        : 'bg-slate-950/70 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    {diff}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* DUAL START BUTTONS: Normal Play & Random Quick Start */}
+            <div className="grid grid-cols-5 gap-2">
               <button
-                id={`diff-btn-${diff}`}
-                key={diff}
+                id="start-game-btn"
                 type="button"
-                onClick={() => onSelectDifficulty(diff)}
-                className={`py-1.5 rounded-2xl text-[11px] font-black uppercase transition-all ${
-                  isDiffActive
-                    ? `bg-gradient-to-r ${diffTheme} text-white shadow-md scale-102 ring-2 ring-white/40`
-                    : 'bg-slate-950/70 text-slate-400 hover:text-slate-200 border border-slate-800'
-                }`}
+                onClick={onStartGame}
+                className="col-span-4 py-3.5 px-4 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 hover:opacity-95 active:scale-98 text-white font-black rounded-2xl shadow-xl shadow-cyan-500/25 flex items-center justify-center gap-2 text-sm sm:text-base transition-all"
               >
-                {diff}
+                <Play className="w-4 h-4 fill-current" />
+                演奏スタート！🥁
               </button>
-            );
-          })}
-        </div>
 
-        {/* DUAL START BUTTONS: Normal Play & Random Quick Start */}
-        <div className="grid grid-cols-5 gap-2">
-          <button
-            id="start-game-btn"
-            type="button"
-            onClick={onStartGame}
-            className="col-span-4 py-3 px-4 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:opacity-95 active:scale-98 text-white font-black rounded-2xl shadow-xl shadow-pink-500/25 flex items-center justify-center gap-2 text-sm sm:text-base transition-all"
-          >
-            <Play className="w-4 h-4 fill-current" />
-            演奏スタート！🥁
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleRandomSelect(true)}
-            className="col-span-1 py-3 px-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 active:scale-98 text-white font-black rounded-2xl shadow-lg flex flex-col items-center justify-center text-[10px] transition-all"
-            title="曲をランダム決定して即スタート！"
-          >
-            <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-            <span>即ランダム</span>
-          </button>
-        </div>
-      </div>
-
-      {/* MOBILE FLOATING QUICK PLAY BAR: Always accessible on mobile so player can start instantly */}
-      <div className="fixed sm:hidden bottom-3 left-3 right-3 z-40 flex items-center justify-between gap-2 p-2.5 px-3.5 rounded-2xl bg-slate-950/95 border-2 border-pink-500/70 shadow-[0_0_24px_rgba(236,72,153,0.35)] backdrop-blur-xl">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black text-white truncate max-w-[140px]">
-              {selectedSong.title}
-            </span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-pink-500/30 text-pink-300 border border-pink-400/50">
-              {selectedDifficulty}
-            </span>
+              <button
+                type="button"
+                onClick={() => handleRandomSelect(true)}
+                className="col-span-1 py-3.5 px-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 active:scale-98 text-white font-black rounded-2xl shadow-lg flex flex-col items-center justify-center text-[10px] transition-all"
+                title="曲をランダム決定して即スタート！"
+              >
+                <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                <span>即ランダム</span>
+              </button>
+            </div>
           </div>
-          <div className="text-[9px] text-amber-300 font-mono flex items-center gap-1 mt-0.5">
-            <span>⚡ {selectedSong.bpm} BPM</span>
-            <span>•</span>
-            <span>{selectedSong.duration}秒</span>
+
+          {/* MOBILE FLOATING QUICK PLAY BAR: Always accessible on mobile so player can start instantly */}
+          <div className="fixed sm:hidden bottom-3 left-3 right-3 z-40 flex items-center justify-between gap-2 p-2.5 px-3.5 rounded-2xl bg-slate-950/95 border-2 border-cyan-500/70 shadow-[0_0_24px_rgba(6,182,212,0.35)] backdrop-blur-xl">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-white truncate max-w-[140px]">
+                  {selectedSong.title}
+                </span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-cyan-500/30 text-cyan-300 border border-cyan-400/50">
+                  {selectedDifficulty}
+                </span>
+              </div>
+              <div className="text-[9px] text-amber-300 font-mono flex items-center gap-1 mt-0.5">
+                <span>⚡ {selectedSong.bpm} BPM</span>
+                <span>•</span>
+                <span>{selectedSong.duration}秒</span>
+              </div>
+            </div>
+
+            <button
+              id="mobile-sticky-start-btn"
+              type="button"
+              onClick={onStartGame}
+              className="py-2.5 px-4 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 active:scale-95 text-white font-black rounded-xl shadow-lg flex items-center gap-1.5 text-xs shrink-0 transition-transform"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>演奏スタート！🥁</span>
+            </button>
           </div>
         </div>
-
-        <button
-          id="mobile-sticky-start-btn"
-          type="button"
-          onClick={onStartGame}
-          className="py-2.5 px-4 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 active:scale-95 text-white font-black rounded-xl shadow-lg flex items-center gap-1.5 text-xs shrink-0 transition-transform"
-        >
-          <Play className="w-3.5 h-3.5 fill-current" />
-          <span>演奏スタート！🥁</span>
-        </button>
-      </div>
+      )}
     </div>
   );
 };

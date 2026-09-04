@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SongData, Difficulty, ScoreState, RhythmNote, PlayerSettings, MascotId, UserProfile, CourseState, RPGCoach } from '../types';
 import { MascotCharacter } from './MascotCharacter';
 import confetti from 'canvas-confetti';
-import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft, FastForward, CheckCircle2, Flame, Award, Lightbulb, ChevronRight } from 'lucide-react';
+import { Trophy, RotateCcw, ListOrdered, Sparkles, User, ArrowLeft, FastForward, CheckCircle2, Flame, Award, Lightbulb, ChevronRight, Home } from 'lucide-react';
 import { saveLocalScore, saveLocalUser } from '../utils/storageFallback';
 import { getRPGLevelConfig, recordLevelClear, getUnlockedPartsForLevel, getTierForLevel } from '../data/rpgCurriculum';
 import { RPG_COACHES } from '../data/rpgCoaches';
@@ -658,14 +658,15 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               )}
 
               <button
+                id="result-return-home-btn"
                 type="button"
                 onClick={onSelectSong}
-                className={`py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-98 ${
+                className={`py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-98 ${
                   !isRPGCleared ? 'col-span-2' : ''
                 }`}
               >
-                <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
-                <span>レッスン・曲選択へ戻る</span>
+                <Home className="w-4 h-4 text-white" />
+                <span>初画面に戻る (レッスンモード)</span>
               </button>
             </div>
           </div>
@@ -745,12 +746,13 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               </button>
 
               <button
+                id="result-freeplay-return-home-btn"
                 type="button"
                 onClick={onSelectSong}
                 className="py-2.5 px-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
-                <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
-                ほかの曲をえらぶ
+                <Home className="w-3.5 h-3.5 text-cyan-400" />
+                初画面へ戻る
               </button>
             </div>
           </>

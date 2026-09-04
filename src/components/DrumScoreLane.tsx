@@ -97,30 +97,30 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
         </div>
       </div>
 
-      {/* Main Notation Lane Staff Canvas */}
-      <div className="relative w-full h-24 sm:h-28 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-b border-x border-slate-800 rounded-b-2xl overflow-hidden shadow-inner flex flex-col justify-center">
+      {/* Main Notation Lane Staff Canvas (ドラム譜面レーン - 縦領域拡張版) */}
+      <div className="relative w-full h-36 sm:h-44 md:h-48 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-b border-x border-slate-800 rounded-b-2xl overflow-hidden shadow-inner flex flex-col justify-center">
         {/* Subtle Drum Staff Clef & Lines (5 lines) */}
-        <div className="absolute inset-0 flex flex-col justify-between py-3.5 px-0 pointer-events-none opacity-40">
-          <div className="w-full h-[1px] bg-slate-600" />
-          <div className="w-full h-[1px] bg-slate-600" />
-          <div className="w-full h-[1px] bg-slate-600" />
-          <div className="w-full h-[1px] bg-slate-600" />
-          <div className="w-full h-[1px] bg-slate-600" />
+        <div className="absolute inset-0 flex flex-col justify-between py-5 sm:py-7 px-0 pointer-events-none opacity-40">
+          <div className="w-full h-[1.5px] bg-slate-600" />
+          <div className="w-full h-[1.5px] bg-slate-600" />
+          <div className="w-full h-[1.5px] bg-slate-600" />
+          <div className="w-full h-[1.5px] bg-slate-600" />
+          <div className="w-full h-[1.5px] bg-slate-600" />
         </div>
 
         {/* Percussion Clef Symbol 𝄢 & Time Signature on the left (楽譜の始まり) */}
-        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none z-10 opacity-80">
-          <div className="w-1.5 h-14 bg-slate-400 rounded-sm shadow" />
-          <div className="w-1 h-14 bg-slate-500 rounded-sm" />
-          <div className="flex flex-col items-center justify-center font-serif text-[11px] font-black text-slate-400 leading-none tracking-tighter">
+        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none z-10 opacity-85">
+          <div className="w-2 h-20 sm:h-24 bg-slate-400 rounded-sm shadow" />
+          <div className="w-1.5 h-20 sm:h-24 bg-slate-500 rounded-sm" />
+          <div className="flex flex-col items-center justify-center font-serif text-xs sm:text-sm font-black text-slate-300 leading-none tracking-tighter">
             <span>4</span>
             <span>4</span>
           </div>
-          <span className="text-xs font-black font-mono text-slate-400">🥁</span>
+          <span className="text-sm font-black font-mono text-slate-400">🥁</span>
         </div>
 
         {/* FLOW DIRECTION ARROW GUIDE (左から右への進行方向案内) */}
-        <div className="absolute left-20 bottom-1 pointer-events-none text-[8px] font-mono text-slate-500 flex items-center gap-1 opacity-70">
+        <div className="absolute left-24 bottom-1.5 pointer-events-none text-[9px] font-mono text-slate-400 flex items-center gap-1 opacity-80">
           <span>譜面進行</span>
           <span className="text-amber-400">▶ ▶ ▶</span>
         </div>
@@ -131,18 +131,18 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
           style={{ left: '85%' }}
         >
           {/* Top Target Marker */}
-          <div className="w-3.5 h-2.5 bg-amber-400 rounded-b shadow-[0_0_12px_#f59e0b] -translate-x-1/2" />
+          <div className="w-4 h-3 bg-amber-400 rounded-b shadow-[0_0_12px_#f59e0b] -translate-x-1/2" />
 
           {/* Glowing Vertical Hit Line */}
           <div className="w-[3px] h-full bg-gradient-to-b from-amber-400 via-pink-400 to-cyan-400 shadow-[0_0_14px_rgba(245,158,11,0.9)] opacity-95" />
 
           {/* Bottom Target Marker */}
-          <div className="w-3.5 h-2.5 bg-amber-400 rounded-t shadow-[0_0_12px_#f59e0b] -translate-x-1/2" />
+          <div className="w-4 h-3 bg-amber-400 rounded-t shadow-[0_0_12px_#f59e0b] -translate-x-1/2" />
         </div>
 
         {/* Strike Zone Glow Aura around the right hit line */}
         <div
-          className="absolute top-0 bottom-0 w-16 -translate-x-1/2 bg-gradient-to-r from-transparent via-amber-500/25 to-transparent pointer-events-none z-10"
+          className="absolute top-0 bottom-0 w-20 -translate-x-1/2 bg-gradient-to-r from-transparent via-amber-500/25 to-transparent pointer-events-none z-10"
           style={{ left: '85%' }}
         />
 
@@ -162,7 +162,7 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
             const staffInfo = PART_STAFF_POSITION[note.part];
             const partConfig = DRUM_PARTS[note.part];
             // Row 0 (top) to 6 (bottom)
-            const topPercent = 12 + staffInfo.row * 12.5;
+            const topPercent = 9 + staffInfo.row * 13;
 
             const isImminent = Math.abs(timeDiff) <= 0.08;
             const isReadAhead = timeDiff > 0 && timeDiff <= 0.45;
@@ -188,17 +188,17 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
                       : 'scale-100'
                   }`}
                   style={{
-                    width: '26px',
-                    height: '24px',
+                    width: '30px',
+                    height: '28px',
                     backgroundColor: partConfig.color,
                     color: note.part.includes('hihat') || note.part === 'crash' || note.part === 'ride' ? '#18181b' : '#ffffff',
-                    boxShadow: `0 0 8px ${partConfig.glowColor}`,
-                    border: '1.5px solid rgba(255,255,255,0.7)',
+                    boxShadow: `0 0 10px ${partConfig.glowColor}`,
+                    border: '2px solid rgba(255,255,255,0.75)',
                   }}
                 >
                   {/* Stem of the musical note */}
                   <div
-                    className="absolute bottom-1/2 right-1 w-[2px] h-5 bg-slate-200 pointer-events-none"
+                    className="absolute bottom-1/2 right-1 w-[2px] h-6 bg-slate-200 pointer-events-none"
                     style={{
                       transformOrigin: 'bottom',
                       backgroundColor: partConfig.color,
@@ -206,14 +206,14 @@ export const DrumScoreLane: React.FC<DrumScoreLaneProps> = ({
                   />
 
                   {/* Drum notation symbol (x, circle-x, or solid note) */}
-                  <span className="text-[12px] leading-none drop-shadow font-extrabold">
+                  <span className="text-[13px] sm:text-[14px] leading-none drop-shadow font-extrabold">
                     {staffInfo.symbol}
                   </span>
                 </div>
 
                 {/* Sub-label under note for absolute clarity (e.g. SN, BD, HH) */}
                 <span
-                  className="text-[8px] font-black font-mono tracking-tighter px-1 rounded-sm bg-black/75 mt-0.5 border border-white/20 whitespace-nowrap"
+                  className="text-[9px] font-black font-mono tracking-tighter px-1 rounded bg-black/80 mt-0.5 border border-white/25 whitespace-nowrap shadow"
                   style={{ color: partConfig.color }}
                 >
                   {staffInfo.label}

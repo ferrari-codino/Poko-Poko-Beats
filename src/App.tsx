@@ -546,8 +546,10 @@ export default function App() {
             onOpenCourseModal={() => setIsCourseModalOpen(true)}
             onOpenShowcase={() => setIsFeaturesPresentationOpen(true)}
             onOpenMyDrumSet={() => setIsMyDrumKitModalOpen(true)}
-            aiBattleEnabled={aiBattleEnabled}
+            aiBattleEnabled={deviceMode === 'tablet' && aiBattleEnabled}
+            deviceMode={deviceMode}
             onToggleAIBattle={() => {
+              if (deviceMode !== 'tablet') return;
               const next = !aiBattleEnabled;
               setAiBattleEnabled(next);
               try {

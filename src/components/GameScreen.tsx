@@ -54,6 +54,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   onFinishGame,
   onExit,
 }) => {
+  // AI Battle is strictly restricted to tablet mode only
+  const isAIBattleActive = deviceMode === 'tablet' && Boolean(aiBattleEnabled);
+
   const [notes, setNotes] = useState<RhythmNote[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [songProgress, setSongProgress] = useState<number>(0);
@@ -300,7 +303,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       // ---------------------------------------------------------
       // AI DRUMMER PERFORMANCE EVALUATION (AI対戦の自動演奏)
       // ---------------------------------------------------------
-      if (aiBattleEnabled) {
+      if (isAIBattleActive) {
         notesRef.current.forEach((n) => {
           if (!aiProcessedNotesRef.current.has(n.id) && effectiveTime >= n.time - 0.02) {
             aiProcessedNotesRef.current.add(n.id);
@@ -329,7 +332,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         });
       }
     },
-    [approachWindow, settings.audioOffsetMs, settings.drumLayout, rpgLevel, aiBattleEnabled, selectedAILevel, getTimingWindows]
+    [approachWindow, settings.audioOffsetMs, settings.drumLayout, rpgLevel, isAIBattleActive, selectedAILevel, getTimingWindows]
   );
 
   const triggerFeedback = (type: JudgmentType, part: DrumPartId, offsetMs?: number) => {
@@ -766,7 +769,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       </div>
 
       {/* CENTER STAGE: 3D-ANGLED DRUM SET & AI BATTLE MINI DRUM SET (画面最適化＆高占有率) */}
-      <div className={`relative flex-1 w-full max-w-7xl mx-auto flex ${aiBattleEnabled ? 'flex-col lg:flex-row items-center justify-center gap-3' : 'items-center justify-center'} my-0.5 px-1 sm:px-3`}>
+      <div className={`relative flex-1 w-full max-w-7xl mx-auto flex ${isAIBattleActive ? 'flex-col lg:flex-row items-center justify-center gap-3' : 'items-center justify-center'} my-0.5 px-1 sm:px-3`}>
         {/* Flashy Judgment, Combo & English Exclamations Feedback */}
         <HitBurstEffect
           feedbacks={feedbacks}
@@ -785,7 +788,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         )}
 
         {/* MAIN 3D ANGLED REAL DRUM SET (プレイヤー用ドラムセット) */}
-        <div className={`relative flex-1 w-full flex items-center justify-center ${aiBattleEnabled ? 'max-w-4xl' : 'max-w-5xl'}`}>
+        <div className={`relative flex-1 w-full flex items-center justify-center ${isAIBattleActive ? 'max-w-4xl' : 'max-w-5xl'}`}>
           <DrumSet
             onDrumHit={handleDrumHit}
             activeGlowingParts={activeGlows}
@@ -811,8 +814,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           />
         </div>
 
-        {/* AI BATTLE MINI DRUM SET (AI対戦モード時: 右側に小型AIドラムセットを表示) */}
-        {aiBattleEnabled && (
+        {/* AI BATTLE MINI DRUM SET (タブレット専用AI対戦モード時のみ表示) */}
+        {isAIBattleActive && (
           <div className="w-full lg:w-72 flex flex-col items-center justify-center z-20 animate-in fade-in slide-in-from-right-4 duration-300">
             {/* Live Battle Score Lead Indicator */}
             <div className="w-full flex items-center justify-between px-3 py-1 mb-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shadow-md">

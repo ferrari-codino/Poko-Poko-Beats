@@ -101,12 +101,12 @@ export const DRUM_PARTS: Record<DrumPartId, DrumPartConfig> = {
     id: 'ride',
     name: 'ライドシンバル (Ride)',
     shortName: 'RIDE',
-    keyLabel: 'Y / U',
+    keyLabel: 'Y / U / V',
     color: '#eab308', // Yellow
     glowColor: 'rgba(234, 179, 8, 0.85)',
     borderColor: '#ca8a04',
     bgActiveColor: '#facc15',
-    description: 'チーンと澄んだカップ音と余韻のライドシンバル',
+    description: '豊かな響きと広がりあるサステインの王道ライドシンバル',
     size: 'large',
   },
 };

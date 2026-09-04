@@ -250,7 +250,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         drumSynth.playRimshot();
         setIsRimshotActive(true);
         setTimeout(() => setIsRimshotActive(false), 240);
-      } else if (isRideBell) {
+      } else if (isRideBell && drumLayout !== 'standard' && drumLayout !== 'wide' && drumLayout !== 'leftHanded') {
         drumSynth.playRideBell();
         setIsRideBellActive(true);
         setTimeout(() => setIsRideBellActive(false), 240);
@@ -364,8 +364,8 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       Z: { part: 'crash', choke: true },
       v: { part: 'ride' },
       V: { part: 'ride' },
-      u: { part: 'ride', rideBell: true }, // [U] triggers Ride Bell (Cup)!
-      U: { part: 'ride', rideBell: true },
+      u: { part: 'ride' }, // [U] and [V] both trigger full authentic Ride Cymbal!
+      U: { part: 'ride' },
     };
 
     const onKeyDown = (ev: KeyboardEvent) => {
@@ -690,41 +690,15 @@ export const DrumSet: React.FC<DrumSetProps> = ({
               }}
             />
 
-            {/* Raised Bell (立体カップ / ドーム - ライド時はクリックで鋭いベル音！) */}
+            {/* Raised Center Cup / Dome (シンバル中央の立体カップ) */}
             <div
-              onPointerDown={(e) => {
-                if (part === 'ride') {
-                  e.stopPropagation();
-                  triggerPadHit(e, { forceRideBell: true });
-                }
-              }}
-              onTouchStart={(e) => {
-                if (part === 'ride') {
-                  e.stopPropagation();
-                  triggerPadHit(e, { forceRideBell: true });
-                }
-              }}
-              onClick={(e) => {
-                if (part === 'ride') {
-                  e.stopPropagation();
-                  triggerPadHit(e, { forceRideBell: true });
-                }
-              }}
-              className={`relative w-[34%] h-[34%] rounded-full flex items-center justify-center border-2 shadow-lg transition-transform ${
-                part === 'ride' ? 'cursor-pointer pointer-events-auto hover:scale-105 active:scale-95 z-30' : 'pointer-events-none'
-              }`}
+              className="relative w-[34%] h-[34%] rounded-full flex items-center justify-center border-2 shadow-lg pointer-events-none"
               style={{
                 background: 'radial-gradient(circle at 35% 35%, #fef08a 0%, #d97706 45%, #78350f 100%)',
                 borderColor: currentCymbal.borderColor,
                 boxShadow: '0 4px 10px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.6)',
               }}
-              title={part === 'ride' ? 'ライドベル / カップ打面 [U]' : undefined}
             >
-              {part === 'ride' && (
-                <span className="absolute -top-3 text-[7px] font-black text-amber-200 bg-black/80 px-1 rounded border border-amber-400/40 pointer-events-none">
-                  BELL [U]
-                </span>
-              )}
               {/* Black Cymbal Cushion Felt (シンバル保護フェルトワッシャー) */}
               <div className="w-[42%] h-[42%] rounded-full bg-slate-950 border border-slate-700 shadow-inner flex items-center justify-center pointer-events-none">
                 {/* Custom Finish Wingnut (蝶ネジ / ウィングボルト) */}
@@ -1451,14 +1425,14 @@ export const DrumSet: React.FC<DrumSetProps> = ({
             <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-amber-300 flex items-center gap-1">
-                  <span>🔔</span> ライドシンバル・ベル (カップ打音)
+                  <span>🟡</span> ライドシンバル (Ride Cymbal)
                 </span>
                 <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-200 font-mono text-[9px] border border-amber-500/30">
-                  U
+                  V / U
                 </kbd>
               </div>
               <p className="text-[10px] text-slate-400 leading-tight">
-                ライド中央の盛り上がったドーム（カップ部）をスティックのショルダーで叩く高音の澄んだピング音。ライド中央のドーム直接クリックでも発音可能。
+                8パッド配置の右手側王道シンバル。広がりある豊かなサステインと澄んだ美しい響きを奏でます。
               </p>
             </div>
 
