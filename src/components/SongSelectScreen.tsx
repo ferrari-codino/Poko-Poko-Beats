@@ -144,9 +144,13 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto min-h-full flex flex-col justify-between p-2.5 sm:p-4 select-none animate-fade-in">
+    <div
+      id="song-select-screen-container"
+      className="w-full max-w-xl mx-auto h-full flex-1 min-h-0 flex flex-col justify-start overflow-y-auto overscroll-y-contain custom-scrollbar p-2.5 sm:p-4 pb-36 sm:pb-8 select-none animate-fade-in"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
       {/* TOP HEADER */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 shrink-0">
         {/* App Title & Mascot */}
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center text-xl shadow-lg border-2 border-white/60">
@@ -202,11 +206,11 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               id="song-select-my-drum-btn"
               type="button"
               onClick={onOpenMyDrumSet}
-              className="px-2.5 py-1.5 rounded-2xl bg-pink-500/25 hover:bg-pink-500/35 text-pink-300 text-xs font-black border border-pink-400/50 flex items-center gap-1.5 transition shadow-sm"
+              className="hidden sm:flex px-2.5 py-1.5 rounded-2xl bg-pink-500/25 hover:bg-pink-500/35 text-pink-300 text-xs font-black border border-pink-400/50 items-center gap-1.5 transition shadow-sm"
               title="マイドラムセットの素材・色・ニックネームをカスタマイズ（最大5スロット登録）"
             >
               <span>🥁</span>
-              <span className="hidden sm:inline">マイドラム</span>
+              <span>マイドラム</span>
               <span className="text-[9px] px-1 rounded bg-pink-400/20 text-pink-200 font-bold">5台</span>
             </button>
           )}
@@ -217,7 +221,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               id="song-select-ai-battle-btn"
               type="button"
               onClick={onToggleAIBattle}
-              className={`px-2.5 py-1.5 rounded-2xl text-xs font-black border flex items-center gap-1.5 transition shadow-sm ${
+              className={`hidden sm:flex px-2.5 py-1.5 rounded-2xl text-xs font-black border items-center gap-1.5 transition shadow-sm ${
                 aiBattleEnabled
                   ? 'bg-purple-500/30 text-purple-200 border-purple-400/60 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
                   : 'bg-slate-900/90 hover:bg-slate-800 text-slate-400 border-slate-800'
@@ -225,7 +229,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               title="AI対戦モードのON/OFF切り替え"
             >
               <Swords className={`w-3.5 h-3.5 ${aiBattleEnabled ? 'text-purple-300 animate-pulse' : 'text-slate-500'}`} />
-              <span className="hidden sm:inline">AI対戦</span>
+              <span>AI対戦</span>
               <span className={`text-[9px] px-1 rounded font-bold ${aiBattleEnabled ? 'bg-purple-400 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>
                 {aiBattleEnabled ? 'ON' : 'OFF'}
               </span>
@@ -526,7 +530,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
       {/* SONG SELECTION LIST */}
       <div
         ref={songListRef}
-        className="flex-1 flex flex-col gap-1.5 overflow-y-auto max-h-[220px] sm:max-h-[260px] mb-2 pr-1 custom-scrollbar"
+        className="flex flex-col gap-1.5 overflow-y-auto max-h-[260px] sm:max-h-[300px] mb-3 pr-1 custom-scrollbar shrink-0"
       >
         {filteredSongs.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-xs">
@@ -541,7 +545,15 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               <div
                 id={`song-card-${song.id}`}
                 key={song.id}
-                onClick={() => onSelectSong(song)}
+                onClick={() => {
+                  onSelectSong(song);
+                  setTimeout(() => {
+                    const el = document.getElementById('difficulty-start-panel');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                  }, 60);
+                }}
                 className={`p-2.5 rounded-2xl border cursor-pointer transition-all ${
                   isSelected
                     ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-pink-400 shadow-[0_0_16px_rgba(244,114,182,0.25)] ring-2 ring-pink-400/40'
@@ -588,7 +600,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
                       {song.bpm} BPM
                     </span>
                     <span className="font-mono text-[9px] text-cyan-300 font-bold bg-cyan-950/70 px-1.5 py-0.2 rounded border border-cyan-800/40">
-                      {song.timeSignature}拍子 • {song.duration}s
+                      {song.timeSignature}拍子 • {song.duration}秒
                     </span>
                   </div>
                 </div>
@@ -609,7 +621,10 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
       </div>
 
       {/* DIFFICULTY SELECTOR & SONG START PANEL */}
-      <div className="bg-slate-900/95 border-2 border-pink-400/30 rounded-3xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md">
+      <div
+        id="difficulty-start-panel"
+        className="bg-slate-900/95 border-2 border-pink-400/30 rounded-3xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md shrink-0 mb-3"
+      >
         {/* Difficulty Tabs Header */}
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs font-black text-white flex items-center gap-1">
@@ -678,6 +693,35 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             <span>即ランダム</span>
           </button>
         </div>
+      </div>
+
+      {/* MOBILE FLOATING QUICK PLAY BAR: Always accessible on mobile so player can start instantly */}
+      <div className="fixed sm:hidden bottom-3 left-3 right-3 z-40 flex items-center justify-between gap-2 p-2.5 px-3.5 rounded-2xl bg-slate-950/95 border-2 border-pink-500/70 shadow-[0_0_24px_rgba(236,72,153,0.35)] backdrop-blur-xl">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-black text-white truncate max-w-[140px]">
+              {selectedSong.title}
+            </span>
+            <span className="text-[9px] px-1.5 py-0.2 rounded font-black uppercase bg-pink-500/30 text-pink-300 border border-pink-400/50">
+              {selectedDifficulty}
+            </span>
+          </div>
+          <div className="text-[9px] text-amber-300 font-mono flex items-center gap-1 mt-0.5">
+            <span>⚡ {selectedSong.bpm} BPM</span>
+            <span>•</span>
+            <span>{selectedSong.duration}秒</span>
+          </div>
+        </div>
+
+        <button
+          id="mobile-sticky-start-btn"
+          type="button"
+          onClick={onStartGame}
+          className="py-2.5 px-4 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 active:scale-95 text-white font-black rounded-xl shadow-lg flex items-center gap-1.5 text-xs shrink-0 transition-transform"
+        >
+          <Play className="w-3.5 h-3.5 fill-current" />
+          <span>演奏スタート！🥁</span>
+        </button>
       </div>
     </div>
   );

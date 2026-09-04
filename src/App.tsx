@@ -389,13 +389,13 @@ export default function App() {
   const activeKit = customKits.find((k) => k.id === activeKitId) || customKits[0];
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 text-slate-100 flex flex-col items-center justify-center p-0 sm:p-2 overflow-hidden font-sans">
+    <div className="w-full h-full min-h-[100dvh] bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 text-slate-100 flex flex-col items-center justify-start sm:justify-center p-0 sm:p-2 overflow-x-hidden font-sans">
       {/* Cute Floating Decorative Background Dots */}
       <div className="fixed top-12 left-12 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed bottom-12 right-12 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* TOP FLOATING DEVICE MODE & TABLET FUNCTION BAR (端末最適化 ＆ タブレット専用機能バー) */}
-      <div className="w-full max-w-6xl px-2 py-1 flex items-center justify-between z-30 text-xs">
+      <div className="w-full max-w-6xl px-2 py-1 flex items-center justify-between z-30 text-xs shrink-0">
         {/* Device Mode Detection & Toggle Pill */}
         <div className="flex items-center gap-1.5">
           <button
@@ -494,8 +494,8 @@ export default function App() {
       <main
         className={`w-full ${
           deviceMode === 'smartphone'
-            ? 'max-w-xl h-screen sm:h-[95vh] sm:max-h-[880px]'
-            : 'max-w-6xl h-screen sm:h-[96vh] sm:max-h-[940px]'
+            ? 'max-w-xl flex-1 min-h-0 h-full sm:h-[95vh] sm:max-h-[880px]'
+            : 'max-w-6xl flex-1 min-h-0 h-full sm:h-[96vh] sm:max-h-[940px]'
         } bg-slate-950/95 sm:rounded-[36px] sm:border-2 sm:border-pink-500/30 shadow-2xl flex flex-col overflow-hidden relative backdrop-blur-xl transition-all duration-300`}
       >
         {/* Device Restriction Check for Smartphone & Tablet Only */}
