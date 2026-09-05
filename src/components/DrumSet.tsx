@@ -448,9 +448,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           e.preventDefault();
           triggerPadHit(e);
         }}
-        className={`group relative flex items-center justify-center cursor-pointer select-none touch-none transition-all duration-75 ${
-          !isUnlocked ? 'brightness-90' : ''
-        } ${customClass}`}
+        className={`group relative flex items-center justify-center cursor-pointer select-none touch-none transition-all duration-75 ${customClass}`}
         style={{
           transform: `scale(${scaleFactor * drumCompress}) rotate(${wobble}deg) ${
             isCymbal ? `rotateX(${cymbalTilt}deg)` : ''
@@ -1040,16 +1038,6 @@ export const DrumSet: React.FC<DrumSetProps> = ({
             </span>
           )}
         </div>
-
-        {/* LOCKED BADGE (for RPG Training curriculum) */}
-        {!isUnlocked && (
-          <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center bg-black/75 z-30 pointer-events-none">
-            <Lock className="w-4 h-4 text-slate-400 mb-0.5" />
-            <span className="text-[9px] font-bold text-slate-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-slate-700">
-              未解放
-            </span>
-          </div>
-        )}
       </div>
     );
   };

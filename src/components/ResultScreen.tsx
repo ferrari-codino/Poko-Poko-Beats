@@ -269,24 +269,35 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   return (
     <div className="w-full max-w-lg mx-auto h-full flex flex-col select-none animate-fade-in overflow-hidden relative">
       {/* TOP FIXED NAVIGATION BAR (いつでも初画面に戻れる固定バー) */}
-      <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-slate-900/90 backdrop-blur border-b border-slate-800 z-20">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-black text-white">🥁 演奏結果</span>
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-slate-900/95 backdrop-blur border-b border-slate-800 z-30">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-sm font-black text-white shrink-0">🥁 演奏結果</span>
           {rpgLevel && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
-              レッスン Lv.{rpgLevel}
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 truncate">
+              Lv.{rpgLevel}
             </span>
           )}
         </div>
-        <button
-          id="result-top-return-home-btn"
-          type="button"
-          onClick={onSelectSong}
-          className="flex items-center gap-1 px-3 py-1 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
-        >
-          <Home className="w-3.5 h-3.5" />
-          <span>初画面へ戻る</span>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            id="result-top-play-again-btn"
+            type="button"
+            onClick={onPlayAgain}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-slate-700 shadow transition-all active:scale-95 cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3 text-amber-400" />
+            <span>もう一度</span>
+          </button>
+          <button
+            id="result-top-return-home-btn"
+            type="button"
+            onClick={onSelectSong}
+            className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>初画面へ</span>
+          </button>
+        </div>
       </div>
 
       {/* SCROLLABLE CONTENT BODY */}
@@ -634,12 +645,55 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </div>
         )}
 
+        {/* IN-CONTENT QUICK ACTION SHORTCUTS (講評の直後にも戻る・再挑戦ボタンを設置しどこからでも確実に操作可能に) */}
+        <div className="pt-2 pb-6 space-y-2">
+          {rpgLevel ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onPlayAgain}
+                className="py-3 px-3 rounded-2xl bg-slate-800/95 hover:bg-slate-700 text-amber-300 font-black text-xs border border-slate-700 flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
+              >
+                <RotateCcw className="w-4 h-4 text-amber-400" />
+                <span>もう一度練習</span>
+              </button>
+              <button
+                type="button"
+                onClick={onSelectSong}
+                className="py-3 px-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:opacity-90 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
+              >
+                <Home className="w-4 h-4 text-white" />
+                <span>初画面へ戻る</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onPlayAgain}
+                className="py-3 px-3 rounded-2xl bg-slate-800/95 hover:bg-slate-700 text-amber-300 font-black text-xs border border-slate-700 flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
+              >
+                <RotateCcw className="w-4 h-4 text-amber-400" />
+                <span>もう一回あそぶ</span>
+              </button>
+              <button
+                type="button"
+                onClick={onSelectSong}
+                className="py-3 px-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:opacity-90 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
+              >
+                <Home className="w-4 h-4 text-white" />
+                <span>選曲画面へ戻る</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Bottom spacer for smooth scrolling */}
-        <div className="h-2" />
+        <div className="h-6" />
       </div>
 
       {/* STICKY BOTTOM ACTION BAR (画面下部に常時表示・固定配置され絶対に押せるボトムバー) */}
-      <div className="shrink-0 p-3 sm:p-4 bg-slate-950/95 border-t border-slate-800/90 shadow-[0_-8px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl z-20 space-y-2">
+      <div className="shrink-0 p-3 sm:p-4 pb-6 sm:pb-4 bg-slate-950/95 border-t border-slate-800/90 shadow-[0_-8px_25px_rgba(0,0,0,0.6)] backdrop-blur-xl z-20 space-y-2">
         {rpgLevel ? (
           /* レッスンモード専用アクション */
           <div className="space-y-2">
