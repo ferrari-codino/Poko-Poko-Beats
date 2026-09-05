@@ -132,15 +132,8 @@ export default function App() {
   });
   const [isMyDrumKitModalOpen, setIsMyDrumKitModalOpen] = useState<boolean>(false);
 
-  // Tablet-specific Feature 2: AI Battle Mode (ON/OFF)
-  const [aiBattleEnabled, setAiBattleEnabled] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('pokopoko_ai_battle_enabled');
-      if (saved !== null) return saved === 'true';
-    } catch {}
-    // Default to true when in tablet mode, false in smartphone mode
-    return detectInitialDeviceMode() === 'tablet';
-  });
+  // Tablet-specific Feature 2: AI Battle Mode (ON/OFF) - Default to FALSE so normal play does not trigger AI battle
+  const [aiBattleEnabled, setAiBattleEnabled] = useState<boolean>(false);
 
   // Spectacular Features Presentation Modal
   const [isFeaturesPresentationOpen, setIsFeaturesPresentationOpen] = useState<boolean>(false);
@@ -176,9 +169,6 @@ export default function App() {
     const newMode = mode || (deviceMode === 'smartphone' ? 'tablet' : 'smartphone');
     setDeviceMode(newMode);
     savePreferredDeviceMode(newMode);
-    if (newMode === 'tablet' && !aiBattleEnabled) {
-      setAiBattleEnabled(true);
-    }
   };
 
   // Load user settings from localStorage if available
@@ -307,6 +297,7 @@ export default function App() {
   const handleStartGame = () => {
     setActiveRPGLevel(null);
     setCourseState(null);
+    setAiBattleEnabled(false); // 選んで演奏モードではAI対戦は動作させない
     drumSynth.init();
     setScreen('game');
   };
@@ -602,9 +593,16 @@ export default function App() {
             rpgLevel={activeRPGLevel}
             userLevel={rpgProgress.currentLevel}
             onUpdateUserBests={(updatedUser) => setCurrentUser(updatedUser)}
-            onPlayAgain={handleStartGame}
+            onPlayAgain={() => {
+              if (activeRPGLevel !== null) {
+                handleStartRPGLevel(activeRPGLevel);
+              } else {
+                handleStartGame();
+              }
+            }}
             onSelectSong={() => {
               setCourseState(null);
+              setActiveRPGLevel(null);
               setScreen('select');
             }}
             onViewLeaderboard={() => setScreen('leaderboard')}

@@ -268,6 +268,27 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
   return (
     <div className="w-full max-w-lg mx-auto h-full flex flex-col select-none animate-fade-in overflow-hidden relative">
+      {/* TOP FIXED NAVIGATION BAR (いつでも初画面に戻れる固定バー) */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-slate-900/90 backdrop-blur border-b border-slate-800 z-20">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-black text-white">🥁 演奏結果</span>
+          {rpgLevel && (
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
+              レッスン Lv.{rpgLevel}
+            </span>
+          )}
+        </div>
+        <button
+          id="result-top-return-home-btn"
+          type="button"
+          onClick={onSelectSong}
+          className="flex items-center gap-1 px-3 py-1 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+        >
+          <Home className="w-3.5 h-3.5" />
+          <span>初画面へ戻る</span>
+        </button>
+      </div>
+
       {/* SCROLLABLE CONTENT BODY */}
       <div
         className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 space-y-3 custom-scrollbar overscroll-contain"

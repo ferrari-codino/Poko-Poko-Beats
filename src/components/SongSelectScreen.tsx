@@ -154,71 +154,45 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
       className="w-full max-w-xl mx-auto h-full flex-1 min-h-0 flex flex-col justify-start overflow-y-auto overscroll-y-contain custom-scrollbar p-2.5 sm:p-4 pb-36 sm:pb-8 select-none animate-fade-in"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
-      {/* TOP HEADER */}
-      <div className="flex items-center justify-between mb-2 shrink-0">
+      {/* TOP HEADER (スマホでも1行で美しく整列するスッキリ設計) */}
+      <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
         {/* App Title & Mascot */}
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center text-xl shadow-lg border-2 border-white/60">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center text-lg sm:text-xl shadow-lg border-2 border-white/60 shrink-0">
             🥁
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-base sm:text-lg font-black text-white leading-tight">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-nowrap">
+              <h1 className="text-sm sm:text-base font-black text-white leading-tight truncate">
                 Poko-Poko Beats
               </h1>
-              <span className="text-[10px] font-mono font-black px-1.5 py-0.2 rounded-md bg-pink-500/25 text-pink-300 border border-pink-400/50 shadow-sm">
+              <span className="text-[9px] sm:text-[10px] font-mono font-black px-1.5 py-0.2 rounded-md bg-pink-500/25 text-pink-300 border border-pink-400/50 shadow-sm shrink-0">
                 v0.70
               </span>
-              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 font-black border border-amber-400/50 shadow-sm">
+              <span className="hidden xs:inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 font-black border border-amber-400/50 shadow-sm shrink-0">
                 <span>👑</span>
-                <span>USER Lv.{rpgLevel || 1}</span>
+                <span>Lv.{rpgLevel || 1}</span>
               </span>
             </div>
-            <span className="text-[10px] text-amber-300 font-bold">
+            <span className="text-[9px] sm:text-[10px] text-amber-300 font-bold block truncate">
               全100曲 🌟 ドラム音ゲー
             </span>
           </div>
         </div>
 
-        {/* Right Action Icons */}
-        <div className="flex items-center gap-1">
-          {onOpenAdmin && (
-            <button
-              id="open-admin-btn"
-              type="button"
-              onClick={onOpenAdmin}
-              className="p-2 rounded-2xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 transition shadow-sm"
-              aria-label="Admin Panel"
-              title="開発者アクセス管理パネル"
-            >
-              <Shield className="w-4 h-4 text-pink-400" />
-            </button>
-          )}
-
-          {onOpenGitHub && (
-            <button
-              id="open-github-btn"
-              type="button"
-              onClick={onOpenGitHub}
-              className="p-2 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
-              aria-label="GitHub & App URLs"
-              title="GitHub 連携 & URL 情報"
-            >
-              <Github className="w-4 h-4 text-white" />
-            </button>
-          )}
-
-          {/* Tablet Dedicated Feature 1: My Drum Kit Customizer Button */}
-          {onOpenMyDrumSet && (
+        {/* Right Action Icons (整列して崩れないコンパクト設計) */}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Tablet Dedicated Feature 1: My Drum Kit Customizer Button (タブレット時のみ) */}
+          {deviceMode === 'tablet' && onOpenMyDrumSet && (
             <button
               id="song-select-my-drum-btn"
               type="button"
               onClick={onOpenMyDrumSet}
-              className="hidden sm:flex px-2.5 py-1.5 rounded-2xl bg-pink-500/25 hover:bg-pink-500/35 text-pink-300 text-xs font-black border border-pink-400/50 items-center gap-1.5 transition shadow-sm"
+              className="px-2.5 py-1.5 rounded-2xl bg-pink-500/25 hover:bg-pink-500/35 text-pink-300 text-xs font-black border border-pink-400/50 flex items-center gap-1.5 transition shadow-sm"
               title="マイドラムセットの素材・色・ニックネームをカスタマイズ（最大5スロット登録）"
             >
               <span>🥁</span>
-              <span>マイドラム</span>
+              <span className="hidden md:inline">マイドラム</span>
               <span className="text-[9px] px-1 rounded bg-pink-400/20 text-pink-200 font-bold">5台</span>
             </button>
           )}
@@ -244,25 +218,12 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             </button>
           )}
 
-          {/* POKO-POKO BEATS SPECTACULAR FEATURES SHOWCASE BUTTON */}
-          {onOpenShowcase && (
-            <button
-              id="open-showcase-btn"
-              type="button"
-              onClick={onOpenShowcase}
-              className="px-2.5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-400 via-pink-500 to-cyan-400 hover:opacity-95 active:scale-95 text-slate-950 text-xs font-black border-2 border-white/70 flex items-center gap-1.5 transition shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse"
-              title="Poko-poko Beats の神機能プレゼンテーション"
-            >
-              <Sparkles className="w-3.5 h-3.5 fill-current text-slate-950" />
-              <span>神機能紹介</span>
-            </button>
-          )}
-
           <button
             id="open-ideas-btn"
             type="button"
             onClick={onOpenIdeas}
             className="px-2 py-1.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/40 flex items-center gap-1 transition shadow-sm"
+            title="面白さUP改善提案"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">面白さUP提案</span>
@@ -273,8 +234,9 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             id="open-settings-btn"
             type="button"
             onClick={onOpenSettings}
-            className="p-2 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+            className="p-2 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800 transition shadow-sm"
             aria-label="Settings"
+            title="設定"
           >
             <Sliders className="w-4 h-4" />
           </button>
@@ -318,38 +280,6 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
           切替
         </button>
       </div>
-
-      {/* POKO-POKO BEATS SPECTACULAR SHOWCASE CALLOUT BANNER */}
-      {onOpenShowcase && (
-        <button
-          type="button"
-          onClick={onOpenShowcase}
-          className="w-full mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 border-2 border-amber-400/60 shadow-lg flex items-center justify-between group transition-all text-left relative overflow-hidden"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 via-pink-500 to-cyan-400 flex items-center justify-center text-xl shadow shrink-0 border border-white/60 group-hover:scale-105 transition-transform">
-              ✨
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-amber-300">
-                  プロドラマー唸る！神機能プレゼンテーション
-                </span>
-                <span className="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black text-[9px] uppercase tracking-wider animate-pulse shadow-sm">
-                  NEW
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-300">
-                ハイハット共鳴・グルーヴ診断・リムショット・部屋鳴り音響を体感 ➜
-              </p>
-            </div>
-          </div>
-          <div className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 text-xs font-black shadow transition shrink-0 flex items-center gap-1 group-hover:scale-105">
-            <span>見る</span>
-            <span>⚡</span>
-          </div>
-        </button>
-      )}
 
       {/* SCREEN MODE SPLIT SWITCH (①レッスンモード [初期値] と 曲・難易度選択演奏モードの画面分割) */}
       <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-900/95 border-2 border-slate-800 shadow-lg mb-3 shrink-0">

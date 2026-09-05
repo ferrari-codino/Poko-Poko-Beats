@@ -1002,57 +1002,90 @@ class DrumSynthEngine {
   }
 
   // ==========================================
-  // 11. ACOUSTIC RIDE & PRO RIDE BELL (FINISH-AWARE)
+  // 11. ACOUSTIC RIDE CYMBAL (AUTHENTIC B20 BRONZE BOW & STICK TIP SYNTHESIS)
   // ==========================================
   public playRide(t: number = this.ctx?.currentTime || 0) {
     this.init();
     if (!this.ctx || !this.drumGain) return;
 
     const cymbal = this.activeCustomKit?.cymbalFinish || 'brilliantGold';
-    let pingFreq = 1450;
-    let sustain = 0.62;
+    let baseSustain = 0.95;
+    let washFilterCutoff = 5800;
+    let tipGainVal = 0.85;
+
     if (cymbal === 'darkVintage') {
-      pingFreq = 1280; // Dark dry ping
-      sustain = 0.48;
+      baseSustain = 0.75;
+      washFilterCutoff = 4800;
+      tipGainVal = 0.95;
     } else if (cymbal === 'platinum') {
-      pingFreq = 1620; // Piercing clear ping
-      sustain = 0.82;
+      baseSustain = 1.15;
+      washFilterCutoff = 7200;
+      tipGainVal = 0.90;
     }
 
-    // Bell ping
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(pingFreq, t);
-
-    gain.gain.setValueAtTime(0.6, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + sustain);
-
-    osc.connect(gain);
-    gain.connect(this.drumGain);
-
-    osc.start(t);
-    osc.stop(t + sustain + 0.01);
-
-    // Metallic body wash noise
+    // 1. Stick Wood Tip Attack Click (スティック先端が盤面に当たるアタック「ツッ」音)
     if (this.noiseBuffer) {
-      const source = this.ctx.createBufferSource();
-      source.buffer = this.noiseBuffer;
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(7500, t);
-      filter.Q.setValueAtTime(4, t);
+      const tipSource = this.ctx.createBufferSource();
+      tipSource.buffer = this.noiseBuffer;
 
-      const nGain = this.ctx.createGain();
-      nGain.gain.setValueAtTime(0.3, t);
-      nGain.gain.exponentialRampToValueAtTime(0.001, t + sustain * 0.7);
+      const tipFilter = this.ctx.createBiquadFilter();
+      tipFilter.type = 'bandpass';
+      tipFilter.frequency.setValueAtTime(6500, t);
+      tipFilter.Q.setValueAtTime(3.2, t);
 
-      source.connect(filter);
-      filter.connect(nGain);
-      nGain.connect(this.drumGain);
+      const tipGain = this.ctx.createGain();
+      tipGain.gain.setValueAtTime(tipGainVal, t);
+      tipGain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
 
-      source.start(t);
-      source.stop(t + sustain * 0.72);
+      tipSource.connect(tipFilter);
+      tipFilter.connect(tipGain);
+      tipGain.connect(this.drumGain);
+
+      tipSource.start(t);
+      tipSource.stop(t + 0.05);
+    }
+
+    // 2. Inharmonic Bronze Body Resonances (単一周波数のベル音ではなく、金属板の多重非調和倍音)
+    const inharmonicFreqs = [540, 890, 1380];
+    const inharmonicGains = [0.22, 0.28, 0.18];
+
+    inharmonicFreqs.forEach((freq, idx) => {
+      if (!this.ctx || !this.drumGain) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle'; // triangle has subtle natural harmonics
+      osc.frequency.setValueAtTime(freq, t);
+
+      const g = inharmonicGains[idx];
+      gain.gain.setValueAtTime(g, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + baseSustain * 0.7);
+
+      osc.connect(gain);
+      gain.connect(this.drumGain);
+
+      osc.start(t);
+      osc.stop(t + baseSustain * 0.72);
+    });
+
+    // 3. Metallic High Cymbal Wash Shimmer (ブロンズ特有の優雅なシンバル広がり)
+    if (this.noiseBuffer) {
+      const washSource = this.ctx.createBufferSource();
+      washSource.buffer = this.noiseBuffer;
+
+      const washFilter = this.ctx.createBiquadFilter();
+      washFilter.type = 'highpass';
+      washFilter.frequency.setValueAtTime(washFilterCutoff, t);
+
+      const washGain = this.ctx.createGain();
+      washGain.gain.setValueAtTime(0.48, t);
+      washGain.gain.exponentialRampToValueAtTime(0.001, t + baseSustain);
+
+      washSource.connect(washFilter);
+      washFilter.connect(washGain);
+      washGain.connect(this.drumGain);
+
+      washSource.start(t);
+      washSource.stop(t + baseSustain + 0.02);
     }
   }
 

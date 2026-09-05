@@ -250,15 +250,12 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         drumSynth.playRimshot();
         setIsRimshotActive(true);
         setTimeout(() => setIsRimshotActive(false), 240);
-      } else if (isRideBell && drumLayout !== 'standard' && drumLayout !== 'wide' && drumLayout !== 'leftHanded') {
-        drumSynth.playRideBell();
-        setIsRideBellActive(true);
-        setTimeout(() => setIsRideBellActive(false), 240);
       } else if (part === 'hihatClosed') {
         drumSynth.playHiHatClosed();
         setIsChokedActive(true);
         setTimeout(() => setIsChokedActive(false), 200);
       } else {
+        // Standard full-kit parts including ride cymbal always play realistic acoustic sound
         drumSynth.playDrum(part);
       }
 
@@ -448,16 +445,11 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         key={part}
         id={`drum-pad-${part}`}
         onPointerDown={(e) => {
-          triggerPadHit(e);
-        }}
-        onTouchStart={(e) => {
-          triggerPadHit(e);
-        }}
-        onClick={(e) => {
+          e.preventDefault();
           triggerPadHit(e);
         }}
         className={`group relative flex items-center justify-center cursor-pointer select-none touch-none transition-all duration-75 ${
-          !isUnlocked ? 'opacity-40 grayscale' : ''
+          !isUnlocked ? 'brightness-90' : ''
         } ${customClass}`}
         style={{
           transform: `scale(${scaleFactor * drumCompress}) rotate(${wobble}deg) ${
@@ -511,14 +503,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {isSnare && (
           <div
             onPointerDown={(e) => {
-              e.stopPropagation();
-              triggerPadHit(e, { forceRimshot: true });
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              triggerPadHit(e, { forceRimshot: true });
-            }}
-            onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               triggerPadHit(e, { forceRimshot: true });
             }}
@@ -535,14 +520,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {isSnare && isUnlocked && (
           <div
             onPointerDown={(e) => {
-              e.stopPropagation();
-              triggerPadHit(e, { forceCrossStick: true });
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              triggerPadHit(e, { forceCrossStick: true });
-            }}
-            onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               triggerPadHit(e, { forceCrossStick: true });
             }}
@@ -560,14 +538,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           <button
             type="button"
             onPointerDown={(e) => {
-              e.stopPropagation();
-              handleHit('crash', e, { forceChoke: true });
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              handleHit('crash', e, { forceChoke: true });
-            }}
-            onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               handleHit('crash', e, { forceChoke: true });
             }}
@@ -658,7 +629,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         {isCymbal ? (
           /* --- B20 BRONZE / CUSTOM FINISH CYMBAL WITH LATHE RIDGES, BELL DOME, FELT & WINGNUT --- */
           <div
-            className="relative w-full h-full rounded-full flex items-center justify-center transition-transform shadow-2xl"
+            className="relative w-full h-full rounded-full flex items-center justify-center transition-transform shadow-2xl bg-slate-950"
             style={{
               transform: 'rotateX(25deg)',
               background: isGlowing
@@ -903,14 +874,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
               {/* Iconic MoonGel Damper Pad (ドラマー御用達！ブルーのムーンジェルミュート - クリックで着脱可能！) */}
               <div
                 onPointerDown={(e) => {
-                  e.stopPropagation();
-                  toggleMoongel();
-                }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
-                  toggleMoongel();
-                }}
-                onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   toggleMoongel();
                 }}
