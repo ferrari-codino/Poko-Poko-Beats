@@ -110,25 +110,25 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
   const selectedCymbal = CYMBAL_FINISHES.find((c) => c.id === currentKit.cymbalFinish) || CYMBAL_FINISHES[0];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-slate-900 border-2 border-indigo-500/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+      <div className="relative w-full max-w-4xl bg-slate-900 border-2 border-indigo-500/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[94dvh] sm:h-auto sm:max-h-[92vh]">
         {/* MODAL HEADER */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border-b border-indigo-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-xl shadow-lg border border-white/40">
+        <div className="p-3.5 sm:p-5 bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border-b border-indigo-500/30 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-lg sm:text-xl shadow-lg border border-white/40 shrink-0">
               🥁
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                <h2 className="text-base sm:text-xl font-black text-white tracking-tight">
                   マイドラムセット工房
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[10px] border border-indigo-400/40">
-                  タブレット専用・5スロット
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[9px] sm:text-[10px] border border-indigo-400/40">
+                  5スロット保存
                 </span>
               </div>
-              <p className="text-xs text-slate-300">
-                素材・シェル色・ヘッド・ハードウェアをカスタマイズしてお気に入りのセットを作成！
+              <p className="text-[10px] sm:text-xs text-slate-300 line-clamp-1">
+                素材・カラー・ヘッド・ハードウェアをカスタマイズしてお気に入りのセットを作成！
               </p>
             </div>
           </div>
@@ -136,15 +136,16 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition shrink-0 ml-2"
+            aria-label="閉じる"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 5-SLOT SELECTION TABS */}
-        <div className="px-4 py-2.5 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between gap-2 overflow-x-auto">
-          <div className="flex items-center gap-2 shrink-0">
+        <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar shrink-0 touch-pan-x">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {customKits.map((kit, idx) => {
               const isSelected = idx === selectedSlotIndex;
               return (
@@ -156,16 +157,16 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
                     setEditingName(kit.name);
                     onSelectKit(kit.id);
                   }}
-                  className={`px-3 py-1.5 rounded-2xl text-xs font-black transition flex items-center gap-1.5 shrink-0 border ${
+                  className={`px-2.5 py-1.5 sm:px-3 rounded-2xl text-xs font-black transition flex items-center gap-1 shrink-0 border ${
                     isSelected
-                      ? 'bg-gradient-to-r from-indigo-500 to-pink-500 text-white border-white/60 shadow-lg scale-105'
+                      ? 'bg-gradient-to-r from-indigo-500 to-pink-500 text-white border-white/60 shadow-lg scale-102'
                       : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
                   }`}
                 >
                   <span>{kit.isDefault ? '⭐' : '🥁'}</span>
-                  <span className="max-w-[110px] truncate">{kit.name}</span>
+                  <span className="max-w-[85px] sm:max-w-[110px] truncate">{kit.name}</span>
                   {kit.isDefault && (
-                    <span className="text-[9px] bg-amber-400 text-slate-950 px-1 rounded font-black">
+                    <span className="text-[8px] sm:text-[9px] bg-amber-400 text-slate-950 px-1 rounded font-black">
                       DEF
                     </span>
                   )}
@@ -177,7 +178,7 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
               <button
                 type="button"
                 onClick={handleCreateNewKit}
-                className="px-3 py-1.5 rounded-2xl text-xs font-bold text-slate-400 bg-slate-900/60 border border-dashed border-slate-700 hover:border-indigo-400 hover:text-indigo-300 transition flex items-center gap-1"
+                className="px-2.5 py-1.5 sm:px-3 rounded-2xl text-xs font-bold text-slate-400 bg-slate-900/60 border border-dashed border-slate-700 hover:border-indigo-400 hover:text-indigo-300 transition flex items-center gap-1 shrink-0"
                 title="新しいスロットを作成（最大5つ）"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -186,16 +187,17 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {!currentKit.isDefault && (
               <button
                 type="button"
                 onClick={() => handleSetDefault(currentKit.id)}
-                className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-xs font-bold flex items-center gap-1 transition"
+                className="px-2 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-[11px] sm:text-xs font-bold flex items-center gap-1 transition shrink-0"
                 title="起動時に自動適用されるデフォルトドラムセットに指定"
               >
                 <Star className="w-3.5 h-3.5" />
-                <span>デフォルトに設定</span>
+                <span className="hidden sm:inline">デフォルトに設定</span>
+                <span className="sm:hidden">標準</span>
               </button>
             )}
 
@@ -203,21 +205,21 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleDeleteKit(selectedSlotIndex)}
-                className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs transition"
+                className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs transition shrink-0"
                 title="このスロットを削除"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         </div>
 
         {/* MODAL MAIN CONTENT: PREVIEW ON TOP/LEFT, CONTROLS ON BOTTOM/RIGHT */}
-        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 touch-pan-y">
           {/* LEFT: 3D REAL-TIME KIT VISUAL PREVIEW & TEST HIT */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-slate-950 to-slate-900 rounded-3xl p-4 border border-slate-800 flex flex-col justify-between relative overflow-hidden shadow-inner">
+          <div className="lg:col-span-5 bg-gradient-to-b from-slate-950 to-slate-900 rounded-3xl p-3 sm:p-4 border border-slate-800 flex flex-col justify-between relative overflow-hidden shadow-inner shrink-0">
             {/* Nickname Editor */}
-            <div className="flex items-center gap-2 mb-3 bg-slate-900/90 p-2 rounded-2xl border border-slate-800">
+            <div className="flex items-center gap-2 mb-2 bg-slate-900/90 p-2 rounded-2xl border border-slate-800">
               <Edit3 className="w-4 h-4 text-indigo-400 shrink-0" />
               <input
                 type="text"
@@ -227,16 +229,16 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
                   setEditingName(e.target.value);
                   handleUpdateCurrentKit({ name: e.target.value });
                 }}
-                className="w-full bg-transparent text-sm font-black text-white outline-none"
+                className="w-full bg-transparent text-xs sm:text-sm font-black text-white outline-none"
                 placeholder="マイドラムセットの愛称"
               />
             </div>
 
-            {/* Visual Drum Riser / Mat Platform in Preview */}
-            <div className="relative my-auto flex flex-col items-center justify-center p-3">
+            {/* Visual Drum Riser / Mat Platform in Preview (FULLY VISIBLE ON MOBILE) */}
+            <div className="relative my-auto flex flex-col items-center justify-center py-2 px-1">
               {/* Drum Stage Rug Base */}
               <div
-                className="absolute inset-x-2 inset-y-1 rounded-[36px] border border-amber-500/20 shadow-2xl"
+                className="absolute inset-x-1 inset-y-0 rounded-3xl sm:rounded-[36px] border border-amber-500/20 shadow-2xl"
                 style={{
                   background:
                     'radial-gradient(ellipse at 50% 60%, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 75%, rgba(2, 6, 23, 1) 100%)',
@@ -244,30 +246,30 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
               />
 
               {/* Hardware stand legs subtle shadows */}
-              <div className="absolute bottom-4 inset-x-8 h-6 bg-black/40 rounded-full blur-md" />
+              <div className="absolute bottom-2 inset-x-6 h-5 bg-black/40 rounded-full blur-md" />
 
-              {/* Mini 3D Drum Model Representation */}
-              <div className="relative z-10 w-full max-w-[300px] aspect-[4/3] flex flex-col items-center justify-between p-2">
+              {/* Mini 3D Drum Model Representation - Scaled so NO drums are cut off */}
+              <div className="relative z-10 w-full max-w-[280px] sm:max-w-[320px] flex flex-col items-center gap-1.5 sm:gap-2.5 p-1.5">
                 {/* Cymbal row */}
-                <div className="w-full flex items-center justify-between px-2">
+                <div className="w-full flex items-center justify-between px-1 sm:px-2">
                   <div
-                    className="w-16 h-16 rounded-full shadow-lg border-2 flex items-center justify-center text-[10px] font-black"
+                    className="w-12 h-12 sm:w-15 sm:h-15 rounded-full shadow-lg border-2 flex items-center justify-center text-[9px] sm:text-[10px] font-black shrink-0 transition-transform"
                     style={{
                       background: selectedCymbal.gradient,
                       borderColor: selectedCymbal.borderColor,
                       color: selectedHardware.color,
-                      transform: 'rotateX(30deg)',
+                      transform: 'rotateX(28deg)',
                     }}
                   >
                     CRASH
                   </div>
                   <div
-                    className="w-16 h-16 rounded-full shadow-lg border-2 flex items-center justify-center text-[10px] font-black"
+                    className="w-12 h-12 sm:w-15 sm:h-15 rounded-full shadow-lg border-2 flex items-center justify-center text-[9px] sm:text-[10px] font-black shrink-0 transition-transform"
                     style={{
                       background: selectedCymbal.gradient,
                       borderColor: selectedCymbal.borderColor,
                       color: selectedHardware.color,
-                      transform: 'rotateX(30deg)',
+                      transform: 'rotateX(28deg)',
                     }}
                   >
                     RIDE
@@ -275,91 +277,91 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
                 </div>
 
                 {/* Toms row */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 -mt-1 sm:-mt-2">
                   <div
-                    className="w-14 h-14 rounded-full border-4 shadow-xl flex items-center justify-center text-[9px] font-black"
+                    className="w-11 h-11 sm:w-13 sm:h-13 rounded-full border-3 sm:border-4 shadow-xl flex items-center justify-center text-[8px] sm:text-[9px] font-black shrink-0 transition-transform"
                     style={{
                       backgroundColor: selectedHead.color,
                       borderColor: selectedHardware.color,
-                      boxShadow: `0 0 12px ${currentKit.shellColor}66, inset 0 0 8px ${currentKit.shellColor}`,
+                      boxShadow: `0 0 10px ${currentKit.shellColor}66, inset 0 0 6px ${currentKit.shellColor}`,
                       color: currentKit.shellColor,
-                      transform: 'rotateX(20deg)',
+                      transform: 'rotateX(18deg)',
                     }}
                   >
-                    TOM
+                    TOM 1
                   </div>
                   <div
-                    className="w-14 h-14 rounded-full border-4 shadow-xl flex items-center justify-center text-[9px] font-black"
+                    className="w-11 h-11 sm:w-13 sm:h-13 rounded-full border-3 sm:border-4 shadow-xl flex items-center justify-center text-[8px] sm:text-[9px] font-black shrink-0 transition-transform"
                     style={{
                       backgroundColor: selectedHead.color,
                       borderColor: selectedHardware.color,
-                      boxShadow: `0 0 12px ${currentKit.shellColor}66, inset 0 0 8px ${currentKit.shellColor}`,
+                      boxShadow: `0 0 10px ${currentKit.shellColor}66, inset 0 0 6px ${currentKit.shellColor}`,
                       color: currentKit.shellColor,
-                      transform: 'rotateX(20deg)',
+                      transform: 'rotateX(18deg)',
                     }}
                   >
-                    TOM
+                    TOM 2
                   </div>
                 </div>
 
-                {/* Snare & Kick bottom row */}
-                <div className="w-full flex items-center justify-around">
+                {/* Snare & Kick bottom row (GUARANTEED VISIBLE!) */}
+                <div className="w-full flex items-center justify-around gap-2 -mt-0.5 sm:-mt-1">
                   <div
-                    className="w-20 h-20 rounded-full border-4 shadow-2xl flex items-center justify-center text-xs font-black relative"
+                    className="w-15 h-15 sm:w-18 sm:h-18 rounded-full border-3 sm:border-4 shadow-2xl flex items-center justify-center text-[10px] sm:text-xs font-black relative shrink-0 transition-transform"
                     style={{
                       backgroundColor: selectedHead.color,
                       borderColor: selectedHardware.color,
-                      boxShadow: `0 0 16px ${currentKit.shellColor}, inset 0 0 12px ${currentKit.shellColor}`,
+                      boxShadow: `0 0 14px ${currentKit.shellColor}, inset 0 0 10px ${currentKit.shellColor}`,
                       color: selectedHead.id === 'clearEbony' ? '#fff' : '#0f172a',
-                      transform: 'rotateX(22deg)',
+                      transform: 'rotateX(20deg)',
                     }}
                   >
                     SNARE
                     <div
-                      className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border"
+                      className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full border"
                       style={{ backgroundColor: selectedHardware.color, borderColor: '#fff' }}
                       title="フープ＆テンションボルト"
                     />
                   </div>
 
                   <div
-                    className="w-24 h-24 rounded-full border-4 shadow-2xl flex flex-col items-center justify-center text-xs font-black"
+                    className="w-17 h-17 sm:w-22 sm:h-22 rounded-full border-3 sm:border-4 shadow-2xl flex flex-col items-center justify-center text-[10px] sm:text-xs font-black shrink-0 transition-transform"
                     style={{
                       backgroundColor: currentKit.shellColor,
                       borderColor: selectedHardware.color,
-                      boxShadow: `0 0 20px ${currentKit.shellColor}aa`,
+                      boxShadow: `0 0 18px ${currentKit.shellColor}aa`,
                       color: '#fff',
                       backgroundImage: selectedMaterial.texturePattern,
                     }}
                   >
-                    <span className="text-[10px] opacity-80 font-mono">22" BASS</span>
+                    <span className="text-[8px] sm:text-[9px] opacity-80 font-mono">22" BASS</span>
                     <span>KICK</span>
                   </div>
                 </div>
               </div>
 
               {/* Hardware stand feet visual */}
-              <div className="w-full flex items-center justify-center gap-6 mt-1 opacity-70">
+              <div className="w-full flex items-center justify-center gap-5 sm:gap-6 mt-1 opacity-70">
                 <div className="flex flex-col items-center">
-                  <div className="w-1 h-4" style={{ backgroundColor: selectedHardware.color }} />
-                  <div className="w-6 h-1 rounded-full bg-slate-900 border border-slate-700" />
+                  <div className="w-1 h-3 sm:h-4" style={{ backgroundColor: selectedHardware.color }} />
+                  <div className="w-5 sm:w-6 h-1 rounded-full bg-slate-900 border border-slate-700" />
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-1 h-5" style={{ backgroundColor: selectedHardware.color }} />
-                  <div className="w-8 h-1 rounded-full bg-slate-900 border border-slate-700" />
+                  <div className="w-1 h-3.5 sm:h-5" style={{ backgroundColor: selectedHardware.color }} />
+                  <div className="w-7 sm:w-8 h-1 rounded-full bg-slate-900 border border-slate-700" />
                 </div>
               </div>
             </div>
 
             {/* Test Sound Button */}
-            <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-800">
-              <div className="text-[11px] text-slate-300">
+            <div className="mt-2 sm:mt-3 flex items-center justify-between pt-2 border-t border-slate-800">
+              <div className="text-[10px] sm:text-[11px] text-slate-300">
                 {selectedMaterial.name} / {selectedHardware.name}
               </div>
               <button
                 type="button"
                 onClick={handleTestHit}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow transition"
+                className="px-2.5 py-1.5 sm:px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow transition"
               >
                 <Volume2 className="w-3.5 h-3.5" />
                 <span>サウンド試聴</span>
@@ -369,28 +371,34 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
 
           {/* RIGHT: CUSTOMIZATION CONTROLS */}
           <div className="lg:col-span-7 flex flex-col gap-3">
-            {/* Category Navigation Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
-              {[
-                { id: 'shell', label: '1. シェル素材' },
-                { id: 'color', label: '2. カラー' },
-                { id: 'head', label: '3. ドラムヘッド' },
-                { id: 'hardware', label: '4. ハードウェア' },
-                { id: 'cymbal', label: '5. シンバル' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-indigo-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* Category Navigation Tabs (HORIZONTALLY SLIDABLE / SCROLLABLE ON MOBILE) */}
+            <div className="relative group">
+              <div className="flex items-center gap-1.5 p-1.5 bg-slate-950/90 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar touch-pan-x scroll-smooth">
+                {[
+                  { id: 'shell', label: '1. シェル素材' },
+                  { id: 'color', label: '2. カラー' },
+                  { id: 'head', label: '3. ドラムヘッド' },
+                  { id: 'hardware', label: '4. ハードウェア' },
+                  { id: 'cymbal', label: '5. シンバル' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
+                      activeTab === tab.id
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              {/* Subtle mobile scroll indicator gradient on the right */}
+              <div className="pointer-events-none absolute right-1 top-1 bottom-1 w-6 bg-gradient-to-l from-slate-950/90 to-transparent rounded-r-2xl sm:hidden flex items-center justify-end pr-1 text-[10px] text-slate-400">
+                ›
+              </div>
             </div>
 
             {/* TAB 1: SHELL MATERIAL */}
@@ -589,14 +597,14 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
             )}
 
             {/* CONFIRMATION / CLOSE BUTTON */}
-            <div className="pt-2 mt-auto flex items-center justify-end gap-2">
+            <div className="pt-3 pb-8 sm:pb-2 mt-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   onSelectKit(currentKit.id);
                   onClose();
                 }}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-95 text-white font-black text-sm shadow-xl active:scale-95 transition flex items-center gap-1.5"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-95 text-white font-black text-sm shadow-xl active:scale-95 transition flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" />
                 <span>このマイドラムセットで決定！</span>

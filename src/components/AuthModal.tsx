@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MascotId, UserProfile } from '../types';
 import { MASCOTS } from '../data/mascots';
 import { saveLocalUser, getLocalUsers } from '../utils/storageFallback';
+import { X, ArrowLeft, UserCheck } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -132,9 +133,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  const handleGuestPlay = () => {
+    const guestUser: UserProfile = {
+      id: `guest_${Date.now()}`,
+      nickname: 'ゲストドラマー',
+      avatarId: 'pokota',
+      totalPlays: 0,
+      totalScore: 0,
+      starsCount: 0,
+      personalBests: {},
+      registeredAt: Date.now(),
+      lastLoginAt: Date.now(),
+    };
+    saveLocalUser(guestUser);
+    onLoginSuccess(guestUser);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border-2 border-pink-400/40 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) {
+          onClose();
+        }
+      }}
+    >
+      <div className="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border-2 border-pink-400/40 rounded-3xl p-5 sm:p-6 shadow-2xl overflow-hidden my-auto">
+        {/* Top-Right Prominent Close (✕) Button */}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="閉じる"
+            className="absolute top-3.5 right-3.5 z-20 w-9 h-9 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600/60 shadow-lg flex items-center justify-center transition active:scale-90"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Cute background bubbles */}
         <div className="absolute -top-10 -right-10 w-32 h-32 bg-pink-500/20 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -257,49 +293,85 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               />
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-black text-sm tracking-wide shadow-lg hover:opacity-95 active:scale-98 transition-all disabled:opacity-50"
-            >
-              {isLoading ? '登録中...' : '🥁 登録してドラムを始める！'}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-black text-sm tracking-wide shadow-lg hover:opacity-95 active:scale-98 transition-all disabled:opacity-50"
+              >
+                {isLoading ? '登録中...' : '🥁 登録してドラムを始める！'}
+              </button>
+
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 active:scale-98"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>登録せずにもどる</span>
+                </button>
+              )}
+
+              {isMandatory && !onClose && (
+                <button
+                  type="button"
+                  onClick={handleGuestPlay}
+                  className="w-full py-2.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 active:scale-98"
+                >
+                  <span>登録せずにゲストとして遊ぶ（スキップ）</span>
+                </button>
+              )}
+            </div>
           </form>
         ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-            <p className="text-xs text-slate-300 font-bold mb-2">
-              保存されているプレイヤーから選択：
-            </p>
-            {existingUsers.map((u) => {
-              const mascot = MASCOTS[(u.avatarId as MascotId) || 'pokota'] || MASCOTS.pokota;
-              return (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(u.id, u.nickname)}
-                  disabled={isLoading}
-                  className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-pink-400/60 hover:bg-slate-800 transition-all text-left group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full ${mascot.avatarBg} flex items-center justify-center text-lg border border-white/40`}>
-                      {mascot.emoji}
-                    </div>
-                    <div>
-                      <div className="text-xs font-black text-white group-hover:text-pink-300 transition-colors">
-                        {u.nickname}
+          <div className="space-y-2">
+            <div className="max-h-60 overflow-y-auto pr-1 space-y-2">
+              <p className="text-xs text-slate-300 font-bold mb-2">
+                保存されているプレイヤーから選択：
+              </p>
+              {existingUsers.map((u) => {
+                const mascot = MASCOTS[(u.avatarId as MascotId) || 'pokota'] || MASCOTS.pokota;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleQuickLogin(u.id, u.nickname)}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-pink-400/60 hover:bg-slate-800 transition-all text-left group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full ${mascot.avatarBg} flex items-center justify-center text-lg border border-white/40`}>
+                        {mascot.emoji}
                       </div>
-                      <div className="text-[10px] text-slate-400">
-                        スコア: {u.totalScore.toLocaleString()}点
+                      <div>
+                        <div className="text-xs font-black text-white group-hover:text-pink-300 transition-colors">
+                          {u.nickname}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          スコア: {u.totalScore.toLocaleString()}点
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <span className="text-xs text-pink-400 font-bold px-2 py-1 rounded-xl bg-pink-500/10 group-hover:bg-pink-500 group-hover:text-white transition-all">
-                    えらぶ →
-                  </span>
-                </button>
-              );
-            })}
+                    <span className="text-xs text-pink-400 font-bold px-2 py-1 rounded-xl bg-pink-500/10 group-hover:bg-pink-500 group-hover:text-white transition-all">
+                      えらぶ →
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full mt-3 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center gap-1.5 active:scale-98"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>もどる（キャンセル）</span>
+              </button>
+            )}
           </div>
         )}
 

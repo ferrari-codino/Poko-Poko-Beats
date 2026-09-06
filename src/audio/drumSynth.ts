@@ -227,13 +227,13 @@ class DrumSynthEngine {
         this.playHiHatOpen(t);
         break;
       case 'tomHigh':
-        this.playTom(t, 220, 130, 0.22, 'tomHigh');
+        this.playTom(t, 240, 145, 0.25, 'tomHigh');
         break;
       case 'tomLow':
-        this.playTom(t, 160, 95, 0.26, 'tomLow');
+        this.playTom(t, 180, 108, 0.38, 'tomLow');
         break;
       case 'tomFloor':
-        this.playTom(t, 110, 60, 0.32, 'tomFloor');
+        this.playTom(t, 135, 72, 0.58, 'tomFloor');
         break;
       case 'crash':
         this.playCrash(t);
@@ -887,89 +887,117 @@ class DrumSynthEngine {
   }
 
   // ==========================================
-  // 9. ACOUSTIC TOM SYNTHESIS (MATERIAL-AWARE)
+  // 9. ACOUSTIC TOM SYNTHESIS (MATERIAL-AWARE & HARMONIC BODY RESONANCE)
   // ==========================================
   private playTom(t: number, startFreq: number, endFreq: number, duration: number, part: DrumPartId = 'tomLow') {
     if (!this.ctx || !this.drumGain) return;
 
     const shell = this.activeCustomKit?.shellMaterial || 'maple';
     const head = this.activeCustomKit?.headStyle || 'coatedWhite';
+    const isFloor = part === 'tomFloor';
+    const isLow = part === 'tomLow';
 
     let actualDuration = duration;
     let sFreq = startFreq;
     let eFreq = endFreq;
-    let punchGain = 0.88;
+    // フロアタムは大口径・大音圧のためパンチゲインを1.25にブースト
+    let punchGain = isFloor ? 1.25 : isLow ? 1.05 : 0.95;
 
     if (shell === 'birch') {
-      actualDuration *= 0.85; // Tight punchy decay
+      actualDuration *= 0.88; // Tight punchy decay
       sFreq *= 1.05; // Bright attack
-      punchGain = 0.95;
+      punchGain *= 1.05;
     } else if (shell === 'acrylic') {
-      actualDuration *= 0.72; // Dry and powerful
-      punchGain = 1.05;
+      actualDuration *= 0.78; // Dry and powerful
+      punchGain *= 1.12;
     } else if (shell === 'brass') {
-      actualDuration *= 1.3; // Long resonant ring
+      actualDuration *= 1.35; // Long resonant ring
       sFreq *= 1.08;
     } else if (shell === 'carbon') {
-      actualDuration *= 0.88;
+      actualDuration *= 0.9;
       sFreq *= 1.1;
-      punchGain = 1.0;
+      punchGain *= 1.05;
     }
 
     if (head === 'hydraulicBlue') {
-      actualDuration *= 0.65; // Extremely fat and short 70s tom
-      punchGain *= 1.1;
+      actualDuration *= 0.7; // Extremely fat and short 70s tom
+      punchGain *= 1.15;
     } else if (head === 'vintage') {
-      actualDuration *= 1.15;
+      actualDuration *= 1.2;
       sFreq *= 0.94;
     }
 
     // Moongel damping
     if (this.moongelDamping) {
-      actualDuration *= 0.6;
+      actualDuration *= 0.65;
     }
 
+    // 1. Fundamental Deep Pitch Drop (基底波: 打撃直後の急降下と豊かな低域胴鳴り)
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
     osc.type = 'sine';
     osc.frequency.setValueAtTime(sFreq, t);
-    osc.frequency.exponentialRampToValueAtTime(eFreq, t + actualDuration * 0.7);
+    osc.frequency.exponentialRampToValueAtTime(eFreq, t + actualDuration * 0.65);
 
     gain.gain.setValueAtTime(punchGain, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + actualDuration);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + actualDuration);
 
     osc.connect(gain);
     gain.connect(this.drumGain);
 
     osc.start(t);
-    osc.stop(t + actualDuration + 0.01);
+    osc.stop(t + actualDuration + 0.02);
 
-    // Beater / stick head slap click
+    // 2. Harmonic Shell Resonance & Air Motion (スマホスピーカーでも確実に「ドーーーン」と抜ける第2倍音)
+    // フロアタムやロータムの低音はスマホスピーカーでカットされやすいため、150Hz〜320Hzの胴鳴り倍音を重層合成
+    const harmonicOsc = this.ctx.createOscillator();
+    const harmonicGain = this.ctx.createGain();
+
+    harmonicOsc.type = isFloor ? 'triangle' : 'sine';
+    const harmMultiplier = isFloor ? 1.62 : 1.55;
+    harmonicOsc.frequency.setValueAtTime(sFreq * harmMultiplier, t);
+    harmonicOsc.frequency.exponentialRampToValueAtTime(eFreq * harmMultiplier, t + actualDuration * 0.55);
+
+    const harmGainVal = isFloor ? punchGain * 0.65 : punchGain * 0.45;
+    harmonicGain.gain.setValueAtTime(harmGainVal, t);
+    harmonicGain.gain.exponentialRampToValueAtTime(0.0001, t + actualDuration * 0.85);
+
+    harmonicOsc.connect(harmonicGain);
+    harmonicGain.connect(this.drumGain);
+
+    harmonicOsc.start(t);
+    harmonicOsc.stop(t + actualDuration * 0.86);
+
+    // 3. Stick Wood Tip Attack Transient (スティックが打面ヘッドを叩いた瞬間の「バシッ！」という爽快な打撃音)
     if (this.noiseBuffer) {
       const slapSource = this.ctx.createBufferSource();
       slapSource.buffer = this.noiseBuffer;
 
       const slapFilter = this.ctx.createBiquadFilter();
       slapFilter.type = 'bandpass';
-      slapFilter.frequency.setValueAtTime(sFreq * 4.2, t);
-      slapFilter.Q.setValueAtTime(3.0, t);
+      // フロアタムは2200Hz、ハイタムは3400Hzの自然な打撃ノイズ帯域
+      const slapFreq = isFloor ? 2200 : isLow ? 2600 : 3400;
+      slapFilter.frequency.setValueAtTime(slapFreq, t);
+      slapFilter.Q.setValueAtTime(2.8, t);
 
       const slapGain = this.ctx.createGain();
-      slapGain.gain.setValueAtTime(0.35, t);
-      slapGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+      const slapAmp = isFloor ? 0.68 : 0.48;
+      slapGain.gain.setValueAtTime(slapAmp, t);
+      slapGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.032);
 
       slapSource.connect(slapFilter);
       slapFilter.connect(slapGain);
       slapGain.connect(this.drumGain);
 
       slapSource.start(t);
-      slapSource.stop(t + 0.03);
+      slapSource.stop(t + 0.038);
     }
 
-    // Sympathetic buzz on toms
+    // 4. Heavy Shell Sympathetic Snare Buzz (大口径タムの衝撃によるスネアスナッピー共鳴)
     if (this.sympatheticBuzzEnabled) {
-      this.triggerSympatheticSnareBuzz(t, 0.16);
+      const buzzIntensity = isFloor ? 0.24 : isLow ? 0.18 : 0.12;
+      this.triggerSympatheticSnareBuzz(t, buzzIntensity);
     }
   }
 
