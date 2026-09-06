@@ -245,7 +245,7 @@ class DrumSynthEngine {
   }
 
   // ==========================================
-  // 1. ACOUSTIC KICK SYNTHESIS (MATERIAL-AWARE)
+  // 1. ACOUSTIC KICK SYNTHESIS (REALISTIC SUB PUNCH & BEATER TRANSIENT)
   // ==========================================
   private playKick(t: number) {
     if (!this.ctx || !this.drumGain) return;
@@ -253,87 +253,109 @@ class DrumSynthEngine {
     const shell = this.activeCustomKit?.shellMaterial || 'maple';
     const head = this.activeCustomKit?.headStyle || 'coatedWhite';
 
-    // Shell acoustics modifier
-    let baseStartFreq = 140;
-    let baseEndFreq = 38;
-    let kickDecay = 0.35;
-    let clickFreq = 320;
-    let clickAmp = 0.6;
-    let punchGain = 1.0;
+    // Shell acoustics parameters
+    let baseStartFreq = 160;
+    let baseEndFreq = 42;
+    let kickDecay = 0.38;
+    let beaterNoiseFreq = 2800;
+    let beaterNoiseQ = 2.5;
+    let beaterAmp = 0.85;
+    let punchGain = 1.15;
 
     if (shell === 'birch') {
-      baseStartFreq = 145;
-      baseEndFreq = 34; // Deep sub punch
-      kickDecay = 0.29; // Tight studio decay
-      clickFreq = 480; // Sharp beater click
-      clickAmp = 0.75;
-      punchGain = 1.1;
-    } else if (shell === 'acrylic') {
-      baseStartFreq = 165;
-      baseEndFreq = 32; // Massive sub drop
-      kickDecay = 0.26; // Punchy & dry
-      clickFreq = 520;
-      clickAmp = 0.85;
-      punchGain = 1.25;
-    } else if (shell === 'brass') {
-      baseStartFreq = 135;
-      baseEndFreq = 42;
-      kickDecay = 0.42; // Resonant sustain
-      clickFreq = 620; // Metallic beater tap
-      clickAmp = 0.65;
-      punchGain = 1.05;
-    } else if (shell === 'carbon') {
-      baseStartFreq = 150;
-      baseEndFreq = 30; // Ultra low-end sub
-      kickDecay = 0.30;
-      clickFreq = 680; // Modern hi-fi transient
-      clickAmp = 0.9;
+      baseStartFreq = 170;
+      baseEndFreq = 38; // Deep sub punch
+      kickDecay = 0.32; // Tight studio recording decay
+      beaterNoiseFreq = 3200; // Crisp cutting beater transient
+      beaterAmp = 0.95;
       punchGain = 1.2;
+    } else if (shell === 'acrylic') {
+      baseStartFreq = 180;
+      baseEndFreq = 34; // Massive modern sub drop
+      kickDecay = 0.28; // Dry, powerful
+      beaterNoiseFreq = 3600;
+      beaterAmp = 1.05;
+      punchGain = 1.35;
+    } else if (shell === 'brass') {
+      baseStartFreq = 150;
+      baseEndFreq = 44;
+      kickDecay = 0.44; // Resonant deep metal boom
+      beaterNoiseFreq = 2600;
+      beaterAmp = 0.8;
+      punchGain = 1.1;
+    } else if (shell === 'carbon') {
+      baseStartFreq = 175;
+      baseEndFreq = 32; // Ultra low-end sub
+      kickDecay = 0.33;
+      beaterNoiseFreq = 4000;
+      beaterAmp = 1.1;
+      punchGain = 1.3;
     }
 
     // Head damping modifier
     if (head === 'hydraulicBlue') {
-      kickDecay *= 0.65; // Ultra-damped 70s fat thump
+      kickDecay *= 0.7; // Fat 70s thump with pillow dampening
       punchGain *= 1.15;
     } else if (head === 'clearEbony') {
-      clickAmp *= 1.25; // Plastic click attack
+      beaterAmp *= 1.3; // High-attack plastic click
     } else if (head === 'vintage') {
-      baseEndFreq *= 0.95; // Warm round fundamental
-      kickDecay *= 1.1;
+      baseEndFreq *= 0.94; // Warm, round, vintage calfskin boom
+      kickDecay *= 1.15;
     }
 
-    // Body sub-bass pitch drop
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    // 1. Deep Sub-Bass Fundamental Drop (大口径バスドラムの急激なピッチ降下と豊かな低音胴鳴り)
+    const subOsc = this.ctx.createOscillator();
+    const subGain = this.ctx.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(baseStartFreq, t);
+    // 0.038秒で基本共鳴周波数へ急降下 (パンチ感の決定打)
+    subOsc.frequency.exponentialRampToValueAtTime(baseEndFreq, t + 0.038);
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(baseStartFreq, t);
-    osc.frequency.exponentialRampToValueAtTime(baseEndFreq, t + 0.12);
+    subGain.gain.setValueAtTime(punchGain, t);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + kickDecay);
 
-    gain.gain.setValueAtTime(punchGain, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + kickDecay);
+    subOsc.connect(subGain);
+    subGain.connect(this.drumGain);
+    subOsc.start(t);
+    subOsc.stop(t + kickDecay + 0.01);
 
-    osc.connect(gain);
-    gain.connect(this.drumGain);
+    // 2. Punch Second Harmonic Body Resonance (ヘッドのたわみとシェル胴鳴り: 75Hz〜90Hz)
+    const bodyOsc = this.ctx.createOscillator();
+    const bodyGain = this.ctx.createGain();
+    bodyOsc.type = 'sine';
+    bodyOsc.frequency.setValueAtTime(baseStartFreq * 0.65, t);
+    bodyOsc.frequency.exponentialRampToValueAtTime(baseEndFreq * 1.8, t + 0.045);
 
-    osc.start(t);
-    osc.stop(t + kickDecay + 0.01);
+    bodyGain.gain.setValueAtTime(punchGain * 0.45, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, t + kickDecay * 0.6);
 
-    // Beater transient click
-    const clickOsc = this.ctx.createOscillator();
-    const clickGain = this.ctx.createGain();
-    clickOsc.type = 'triangle';
-    clickOsc.frequency.setValueAtTime(clickFreq, t);
-    clickOsc.frequency.exponentialRampToValueAtTime(50, t + 0.02);
+    bodyOsc.connect(bodyGain);
+    bodyGain.connect(this.drumGain);
+    bodyOsc.start(t);
+    bodyOsc.stop(t + kickDecay * 0.62);
 
-    clickGain.gain.setValueAtTime(clickAmp, t);
-    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+    // 3. Realistic Beater Impact Transient Click (本物のフェルト／木製ビーター打面アタック)
+    if (this.noiseBuffer) {
+      const beaterSource = this.ctx.createBufferSource();
+      beaterSource.buffer = this.noiseBuffer;
 
-    clickOsc.connect(clickGain);
-    clickGain.connect(this.drumGain);
+      const beaterFilter = this.ctx.createBiquadFilter();
+      beaterFilter.type = 'bandpass';
+      beaterFilter.frequency.setValueAtTime(beaterNoiseFreq, t);
+      beaterFilter.Q.setValueAtTime(beaterNoiseQ, t);
 
-    clickOsc.start(t);
-    clickOsc.stop(t + 0.03);
+      const beaterGainNode = this.ctx.createGain();
+      beaterGainNode.gain.setValueAtTime(beaterAmp, t);
+      // 超高速アタック＆急峻な減衰 (22ミリ秒) で「ドスッ」「ペチッ」という生ドラムの衝撃音
+      beaterGainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.022);
+
+      beaterSource.connect(beaterFilter);
+      beaterFilter.connect(beaterGainNode);
+      beaterGainNode.connect(this.drumGain);
+
+      beaterSource.start(t);
+      beaterSource.stop(t + 0.025);
+    }
 
     // PRO REALISM: Sympathetic Snare Wire Buzz triggered by heavy kick vibration!
     if (this.sympatheticBuzzEnabled) {
@@ -459,6 +481,26 @@ class DrumSynthEngine {
 
     noiseSource.start(t);
     noiseSource.stop(t + noiseDecay + 0.01);
+
+    // 4. Stick Tip Head Attack Impact (木製スティックがヘッドを叩く瞬間の鋭いアタック音「ペシッ」)
+    const stickSource = this.ctx.createBufferSource();
+    stickSource.buffer = this.noiseBuffer;
+
+    const stickFilter = this.ctx.createBiquadFilter();
+    stickFilter.type = 'bandpass';
+    stickFilter.frequency.setValueAtTime(3600, t);
+    stickFilter.Q.setValueAtTime(2.2, t);
+
+    const stickGain = this.ctx.createGain();
+    stickGain.gain.setValueAtTime(0.65 * velocity, t);
+    stickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.018);
+
+    stickSource.connect(stickFilter);
+    stickFilter.connect(stickGain);
+    stickGain.connect(this.drumGain);
+
+    stickSource.start(t);
+    stickSource.stop(t + 0.02);
   }
 
   // ==========================================
@@ -1006,87 +1048,116 @@ class DrumSynthEngine {
   // ==========================================
   public playRide(t: number = this.ctx?.currentTime || 0) {
     this.init();
-    if (!this.ctx || !this.drumGain) return;
+    if (!this.ctx || !this.drumGain || !this.noiseBuffer) return;
 
     const cymbal = this.activeCustomKit?.cymbalFinish || 'brilliantGold';
-    let baseSustain = 0.95;
-    let washFilterCutoff = 5800;
-    let tipGainVal = 0.85;
+    let baseSustain = 1.6;
+    let washFilterCutoff = 6500;
+    let tipGainVal = 1.0;
 
     if (cymbal === 'darkVintage') {
-      baseSustain = 0.75;
-      washFilterCutoff = 4800;
-      tipGainVal = 0.95;
+      baseSustain = 1.25;
+      washFilterCutoff = 5200;
+      tipGainVal = 1.1;
     } else if (cymbal === 'platinum') {
-      baseSustain = 1.15;
-      washFilterCutoff = 7200;
-      tipGainVal = 0.90;
+      baseSustain = 1.85;
+      washFilterCutoff = 7800;
+      tipGainVal = 0.95;
     }
 
-    // 1. Stick Wood Tip Attack Click (スティック先端が盤面に当たるアタック「ツッ」音)
-    if (this.noiseBuffer) {
-      const tipSource = this.ctx.createBufferSource();
-      tipSource.buffer = this.noiseBuffer;
+    // 1. Stick Wood Tip Attack Transient (ヒッコリー材スティックの木製チップが金属盤を突く乾いた「ツッ」音)
+    // ベル音感を一切生まない、7500Hzの超短時間(16ms)アタックパルス
+    const tipSource = this.ctx.createBufferSource();
+    tipSource.buffer = this.noiseBuffer;
 
-      const tipFilter = this.ctx.createBiquadFilter();
-      tipFilter.type = 'bandpass';
-      tipFilter.frequency.setValueAtTime(6500, t);
-      tipFilter.Q.setValueAtTime(3.2, t);
+    const tipFilter = this.ctx.createBiquadFilter();
+    tipFilter.type = 'bandpass';
+    tipFilter.frequency.setValueAtTime(7500, t);
+    tipFilter.Q.setValueAtTime(4.2, t);
 
-      const tipGain = this.ctx.createGain();
-      tipGain.gain.setValueAtTime(tipGainVal, t);
-      tipGain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    const tipGain = this.ctx.createGain();
+    tipGain.gain.setValueAtTime(tipGainVal, t);
+    tipGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.016);
 
-      tipSource.connect(tipFilter);
-      tipFilter.connect(tipGain);
-      tipGain.connect(this.drumGain);
+    tipSource.connect(tipFilter);
+    tipFilter.connect(tipGain);
+    tipGain.connect(this.drumGain);
 
-      tipSource.start(t);
-      tipSource.stop(t + 0.05);
-    }
+    tipSource.start(t);
+    tipSource.stop(t + 0.02);
 
-    // 2. Inharmonic Bronze Body Resonances (単一周波数のベル音ではなく、金属板の多重非調和倍音)
-    const inharmonicFreqs = [540, 890, 1380];
-    const inharmonicGains = [0.22, 0.28, 0.18];
+    // 2. Pure B20 Bronze Inharmonic Resonator Bank (単一周波数のピッチ感／ベル音を完全排除！)
+    // 金属板（CuSn20青銅）特有の超高密度・非調和分散共振モード (1.6kHz〜9.5kHz)
+    // ※ ベル音の原因となる低周波サイン波オシレーターは一切不使用
+    const bronzeModes = [
+      { freq: 1680, q: 8, gain: 0.16, decay: baseSustain * 0.75 },
+      { freq: 2450, q: 10, gain: 0.22, decay: baseSustain * 0.85 },
+      { freq: 3350, q: 11, gain: 0.24, decay: baseSustain * 0.9 },
+      { freq: 4650, q: 9, gain: 0.26, decay: baseSustain * 0.95 },
+      { freq: 6800, q: 8, gain: 0.22, decay: baseSustain * 0.8 },
+      { freq: 9200, q: 6, gain: 0.18, decay: baseSustain * 0.65 },
+    ];
 
-    inharmonicFreqs.forEach((freq, idx) => {
-      if (!this.ctx || !this.drumGain) return;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'triangle'; // triangle has subtle natural harmonics
-      osc.frequency.setValueAtTime(freq, t);
+    bronzeModes.forEach((mode) => {
+      if (!this.ctx || !this.drumGain || !this.noiseBuffer) return;
+      const resSource = this.ctx.createBufferSource();
+      resSource.buffer = this.noiseBuffer;
 
-      const g = inharmonicGains[idx];
-      gain.gain.setValueAtTime(g, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + baseSustain * 0.7);
+      const resFilter = this.ctx.createBiquadFilter();
+      resFilter.type = 'bandpass';
+      resFilter.frequency.setValueAtTime(mode.freq, t);
+      resFilter.Q.setValueAtTime(mode.q, t);
 
-      osc.connect(gain);
-      gain.connect(this.drumGain);
+      const resGain = this.ctx.createGain();
+      resGain.gain.setValueAtTime(mode.gain, t);
+      resGain.gain.exponentialRampToValueAtTime(0.0001, t + mode.decay);
 
-      osc.start(t);
-      osc.stop(t + baseSustain * 0.72);
+      resSource.connect(resFilter);
+      resFilter.connect(resGain);
+      resGain.connect(this.drumGain);
+
+      resSource.start(t);
+      resSource.stop(t + mode.decay + 0.02);
     });
 
-    // 3. Metallic High Cymbal Wash Shimmer (ブロンズ特有の優雅なシンバル広がり)
-    if (this.noiseBuffer) {
-      const washSource = this.ctx.createBufferSource();
-      washSource.buffer = this.noiseBuffer;
+    // 3. Acoustic Cymbal Sizzle & Wash (高域の微粒子が空気中に広がるサステイン「シャーーーン…」)
+    const washSource = this.ctx.createBufferSource();
+    washSource.buffer = this.noiseBuffer;
 
-      const washFilter = this.ctx.createBiquadFilter();
-      washFilter.type = 'highpass';
-      washFilter.frequency.setValueAtTime(washFilterCutoff, t);
+    const washFilter = this.ctx.createBiquadFilter();
+    washFilter.type = 'highpass';
+    washFilter.frequency.setValueAtTime(washFilterCutoff, t);
 
-      const washGain = this.ctx.createGain();
-      washGain.gain.setValueAtTime(0.48, t);
-      washGain.gain.exponentialRampToValueAtTime(0.001, t + baseSustain);
+    const washGain = this.ctx.createGain();
+    washGain.gain.setValueAtTime(0.42, t);
+    washGain.gain.exponentialRampToValueAtTime(0.0001, t + baseSustain);
 
-      washSource.connect(washFilter);
-      washFilter.connect(washGain);
-      washGain.connect(this.drumGain);
+    washSource.connect(washFilter);
+    washFilter.connect(washGain);
+    washGain.connect(this.drumGain);
 
-      washSource.start(t);
-      washSource.stop(t + baseSustain + 0.02);
-    }
+    washSource.start(t);
+    washSource.stop(t + baseSustain + 0.03);
+
+    // 4. Cymbal Bow Body Air Motion (シンバル盤全体の空気を押す柔らかい胴鳴り 650Hz)
+    const bodySource = this.ctx.createBufferSource();
+    bodySource.buffer = this.noiseBuffer;
+
+    const bodyFilter = this.ctx.createBiquadFilter();
+    bodyFilter.type = 'bandpass';
+    bodyFilter.frequency.setValueAtTime(650, t);
+    bodyFilter.Q.setValueAtTime(1.4, t);
+
+    const bodyGain = this.ctx.createGain();
+    bodyGain.gain.setValueAtTime(0.18, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.0001, t + baseSustain * 0.45);
+
+    bodySource.connect(bodyFilter);
+    bodyFilter.connect(bodyGain);
+    bodyGain.connect(this.drumGain);
+
+    bodySource.start(t);
+    bodySource.stop(t + baseSustain * 0.48);
   }
 
   // PRO REALISM: Ride Cymbal Bell (Cup) - Piercing metallic accent

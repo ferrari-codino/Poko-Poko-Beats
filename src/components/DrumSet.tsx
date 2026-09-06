@@ -1047,8 +1047,8 @@ export const DrumSet: React.FC<DrumSetProps> = ({
       ref={containerRef}
       className={`relative w-full ${
         deviceMode === 'smartphone'
-          ? 'max-w-2xl h-full min-h-[380px] sm:min-h-[420px]'
-          : 'max-w-5xl h-full min-h-[440px] sm:min-h-[520px]'
+          ? 'max-w-2xl h-full min-h-[250px] sm:min-h-[380px]'
+          : 'max-w-5xl h-full min-h-[420px] sm:min-h-[520px]'
       } mx-auto flex items-center justify-center p-0.5 sm:p-2 select-none touch-none`}
       style={{
         perspective: '1000px', // Authentic deep 3D perspective
@@ -1224,44 +1224,46 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         ))}
       </div>
 
-      {/* 3. VIRTUAL HICKORY DRUMSTICKS WITH PHYSICAL STRIKE & REBOUND */}
-      <div className="absolute inset-x-0 top-0 h-28 pointer-events-none z-35 overflow-visible">
-        {/* Left Hand Stick (Hickory Maple Wood with Tapered Tip) */}
-        <div
-          className={`absolute left-[28%] sm:left-[32%] top-2 w-2 sm:w-2.5 h-20 sm:h-24 origin-top transition-transform duration-75 ${
-            leftStickStrike ? 'animate-stick-strike' : ''
-          }`}
-          style={{
-            transform: leftStickStrike ? undefined : 'rotate(-22deg)',
-            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
-          }}
-        >
-          <div className="w-full h-full bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 rounded-full border border-amber-400/40 relative">
-            {/* Acorn Wood Tip */}
-            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-100 border border-amber-300 shadow-sm" />
-            {/* Stick Shoulder Ring */}
-            <div className="absolute bottom-6 inset-x-0 h-0.5 bg-amber-500/40" />
+      {/* 3. VIRTUAL HICKORY DRUMSTICKS (スマホモードや幼児・レッスン向けcompact配置ではバスドラム等の視認性・押しやすさを最優先するため非表示) */}
+      {deviceMode !== 'smartphone' && drumLayout !== 'compact' && (
+        <div className="absolute inset-x-0 top-0 h-28 pointer-events-none z-35 overflow-visible">
+          {/* Left Hand Stick (Hickory Maple Wood with Tapered Tip) */}
+          <div
+            className={`absolute left-[28%] sm:left-[32%] top-2 w-2 sm:w-2.5 h-20 sm:h-24 origin-top transition-transform duration-75 ${
+              leftStickStrike ? 'animate-stick-strike' : ''
+            }`}
+            style={{
+              transform: leftStickStrike ? undefined : 'rotate(-22deg)',
+              filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
+            }}
+          >
+            <div className="w-full h-full bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 rounded-full border border-amber-400/40 relative">
+              {/* Acorn Wood Tip */}
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-100 border border-amber-300 shadow-sm" />
+              {/* Stick Shoulder Ring */}
+              <div className="absolute bottom-6 inset-x-0 h-0.5 bg-amber-500/40" />
+            </div>
           </div>
-        </div>
 
-        {/* Right Hand Stick (Hickory Maple Wood with Tapered Tip) */}
-        <div
-          className={`absolute right-[28%] sm:right-[32%] top-2 w-2 sm:w-2.5 h-20 sm:h-24 origin-top transition-transform duration-75 ${
-            rightStickStrike ? 'animate-stick-strike' : ''
-          }`}
-          style={{
-            transform: rightStickStrike ? undefined : 'rotate(22deg)',
-            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
-          }}
-        >
-          <div className="w-full h-full bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 rounded-full border border-amber-400/40 relative">
-            {/* Acorn Wood Tip */}
-            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-100 border border-amber-300 shadow-sm" />
-            {/* Stick Shoulder Ring */}
-            <div className="absolute bottom-6 inset-x-0 h-0.5 bg-amber-500/40" />
+          {/* Right Hand Stick (Hickory Maple Wood with Tapered Tip) */}
+          <div
+            className={`absolute right-[28%] sm:right-[32%] top-2 w-2 sm:w-2.5 h-20 sm:h-24 origin-top transition-transform duration-75 ${
+              rightStickStrike ? 'animate-stick-strike' : ''
+            }`}
+            style={{
+              transform: rightStickStrike ? undefined : 'rotate(22deg)',
+              filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
+            }}
+          >
+            <div className="w-full h-full bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300 rounded-full border border-amber-400/40 relative">
+              {/* Acorn Wood Tip */}
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-100 border border-amber-300 shadow-sm" />
+              {/* Stick Shoulder Ring */}
+              <div className="absolute bottom-6 inset-x-0 h-0.5 bg-amber-500/40" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* PRO ACOUSTIC CONTROLS & TECHNIQUE HUD (Top-Left) */}
       <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-sm px-2 py-1 rounded-xl border border-slate-700/80 shadow-md">
@@ -1484,7 +1486,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
         ))}
       </div>
 
-      {/* 1. HI-HAT PEDAL CHOKE FOOTBOARD BUTTON */}
+      {/* 1. HI-HAT PEDAL CHOKE FOOTBOARD BUTTON (PC/タブレット用、スマホでは下部バーの邪魔を避けるため非表示) */}
       <button
         type="button"
         onClick={(e) => {
@@ -1493,7 +1495,7 @@ export const DrumSet: React.FC<DrumSetProps> = ({
           setIsChokedActive(true);
           setTimeout(() => setIsChokedActive(false), 220);
         }}
-        className="absolute bottom-2 left-3 z-40 px-2 py-1 rounded-xl bg-slate-950/90 hover:bg-slate-800 active:scale-95 border border-cyan-500/50 text-cyan-300 text-[9px] font-black tracking-tight shadow-md flex items-center gap-1 transition"
+        className="hidden sm:flex absolute bottom-2 left-3 z-40 px-2 py-1 rounded-xl bg-slate-950/90 hover:bg-slate-800 active:scale-95 border border-cyan-500/50 text-cyan-300 text-[9px] font-black tracking-tight shadow-md items-center gap-1 transition"
         title="ハイハットの余韻を消音（チョーク・ペダル） [P]"
       >
         <span>🦶</span>
@@ -1542,10 +1544,10 @@ export const DrumSet: React.FC<DrumSetProps> = ({
             </div>
           </div>
 
-          {/* BOTTOM ROW: Bass Drum / Kick (Bottom Center on floor) */}
-          <div className="flex items-center justify-center w-full h-[32%] pb-1">
+          {/* BOTTOM ROW: Bass Drum / Kick (Bottom Center on floor) - pb-4で画面下のバーとの重複を完全防止 */}
+          <div className="flex items-center justify-center w-full h-[32%] pb-4 sm:pb-1">
             <div className="w-[84%] max-w-[320px] h-full flex items-center justify-center">
-              {render3DPad('kick', 'w-full h-full max-h-[112px]')}
+              {render3DPad('kick', 'w-full h-full max-h-[88px] sm:max-h-[112px]')}
             </div>
           </div>
         </div>

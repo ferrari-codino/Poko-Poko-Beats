@@ -302,7 +302,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
       {/* SCROLLABLE CONTENT BODY */}
       <div
-        className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 space-y-3 custom-scrollbar overscroll-contain"
+        className="flex-1 overflow-y-auto px-3 sm:px-5 pt-3 pb-32 sm:pb-12 space-y-3 custom-scrollbar overscroll-contain"
         style={{ touchAction: 'pan-y' }}
       >
         {/* HEADER & MASCOT CHEER */}
@@ -334,39 +334,67 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             )}
           </div>
 
-          {/* Mascot cheer banner */}
-          <div className="my-2 flex justify-center">
-            <MascotCharacter
-              mascotId={currentUser?.avatarId || settings.avatarId || 'pokota'}
-              reaction="clear"
-              combo={scoreState.maxCombo}
-              showSpeechBubble={true}
-            />
-          </div>
+          {/* LESSON MODE: Slim Integrated Mascot & Song Banner (見切れ防止の省スペース設計) */}
+          {rpgConfig ? (
+            <div className="my-1.5 p-2 rounded-2xl bg-gradient-to-r from-slate-900/95 via-purple-950/40 to-slate-900/95 border border-purple-500/40 shadow-md flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-lg shrink-0 shadow">
+                  🐼
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-purple-300 flex items-center gap-1">
+                    <span>パンジー</span>
+                    <span className="text-slate-400">• 「最高のギグだったぜ！🎸」</span>
+                  </div>
+                  <div className="text-xs font-black text-white truncate">
+                    {song.title} <span className="text-[10px] text-slate-400 font-normal">({difficulty.toUpperCase()} • BPM {song.bpm})</span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="text-center mt-1">
-            <h1 className="text-2xl sm:text-3xl font-black text-white">{song.title}</h1>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {difficulty.toUpperCase()} • BPM {song.bpm} • {song.timeSignature}拍子
-            </p>
-
-            {/* Flashy English Praise Badge */}
-            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/30 via-pink-500/30 to-cyan-500/30 border border-pink-400/50 shadow-md">
-              <span className="text-xs">✨</span>
-              <span className="text-xs font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300">
-                {rankInfo.rank === 'S+'
-                  ? '👑 PERFECT MASTER DRUMMER! 🌟'
-                  : rankInfo.rank === 'S'
-                  ? '🔥 AWESOME GROOVE & BEATS! ⚡'
-                  : rankInfo.rank === 'A'
-                  ? '✨ COOL DRUM PERFORMANCE! 💫'
-                  : rankInfo.rank === 'B'
-                  ? '🎵 NICE BEAT & RHYTHM! 🎈'
-                  : '🥁 GOOD TRY! KEEP ROCKING! 🍀'}
-              </span>
-              <span className="text-xs">🔥</span>
+              {/* Compact Clear Praise */}
+              <div className="shrink-0 px-2 py-0.5 rounded-full bg-pink-500/20 border border-pink-400/50 text-[10px] font-black text-pink-300">
+                {rankInfo.rank === 'S+' || rankInfo.rank === 'S' ? '🔥 AWESOME!' : '🥁 GOOD TRY!'}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* FREE PLAY: Standard Spacious Mascot Display */
+            <>
+              {/* Mascot cheer banner */}
+              <div className="my-2 flex justify-center">
+                <MascotCharacter
+                  mascotId={currentUser?.avatarId || settings.avatarId || 'pokota'}
+                  reaction="clear"
+                  combo={scoreState.maxCombo}
+                  showSpeechBubble={true}
+                />
+              </div>
+
+              <div className="text-center mt-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-white">{song.title}</h1>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {difficulty.toUpperCase()} • BPM {song.bpm} • {song.timeSignature}拍子
+                </p>
+
+                {/* Flashy English Praise Badge */}
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/30 via-pink-500/30 to-cyan-500/30 border border-pink-400/50 shadow-md">
+                  <span className="text-xs">✨</span>
+                  <span className="text-xs font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300">
+                    {rankInfo.rank === 'S+'
+                      ? '👑 PERFECT MASTER DRUMMER! 🌟'
+                      : rankInfo.rank === 'S'
+                      ? '🔥 AWESOME GROOVE & BEATS! ⚡'
+                      : rankInfo.rank === 'A'
+                      ? '✨ COOL DRUM PERFORMANCE! 💫'
+                      : rankInfo.rank === 'B'
+                      ? '🎵 NICE BEAT & RHYTHM! 🎈'
+                      : '🥁 GOOD TRY! KEEP ROCKING! 🍀'}
+                  </span>
+                  <span className="text-xs">🔥</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* SCORE & RANK CARD */}
@@ -439,148 +467,55 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               <div className="font-mono font-bold text-white text-sm">{scoreState.miss}</div>
             </div>
           </div>
-
-          {/* 2. GROOVE TIMING ANALYZER (プロ・ミュージシャン視点のノリ診断: 前ノリ・ジャスト・後ノリ) */}
-          {(() => {
-            const hitNotes = notes.filter((n) => n.hit && n.hitTimeDiff !== undefined);
-            const totalHits = Math.max(1, hitNotes.length);
-            const rush = hitNotes.filter((n) => n.hitTimeDiff! < -14).length;
-            const pocket = hitNotes.filter((n) => Math.abs(n.hitTimeDiff!) <= 14).length;
-            const layback = hitNotes.filter((n) => n.hitTimeDiff! > 14).length;
-
-            const rushPct = Math.round((rush / totalHits) * 100);
-            const pocketPct = Math.round((pocket / totalHits) * 100);
-            const laybackPct = Math.round((layback / totalHits) * 100);
-
-            const sumOffset = hitNotes.reduce((acc, n) => acc + n.hitTimeDiff!, 0);
-            const avgOffset = hitNotes.length > 0 ? Math.round(sumOffset / hitNotes.length) : 0;
-
-            const dominant =
-              pocketPct >= rushPct && pocketPct >= laybackPct
-                ? 'pocket'
-                : rushPct > laybackPct
-                ? 'rush'
-                : 'layback';
-
-            return (
-              <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-slate-950/80 via-slate-900/90 to-slate-950/80 border border-amber-500/30 shadow-inner space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs">🎯</span>
-                    <span className="text-xs font-black text-amber-300">グルーヴ・アナライザー (Timing Feel)</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    平均ズレ: <strong className={avgOffset > 0 ? 'text-cyan-400' : avgOffset < 0 ? 'text-pink-400' : 'text-amber-400'}>
-                      {avgOffset > 0 ? `+${avgOffset}` : avgOffset}ms
-                    </strong>
-                  </span>
-                </div>
-
-                {/* Timing Distribution Bar */}
-                <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
-                  <div
-                    style={{ width: `${rushPct}%` }}
-                    className="bg-pink-500 hover:opacity-90 transition-all relative group"
-                    title={`前ノリ (Rush): ${rushPct}%`}
-                  />
-                  <div
-                    style={{ width: `${pocketPct}%` }}
-                    className="bg-amber-400 hover:opacity-90 transition-all relative group"
-                    title={`ジャスト (Pocket): ${pocketPct}%`}
-                  />
-                  <div
-                    style={{ width: `${laybackPct}%` }}
-                    className="bg-cyan-500 hover:opacity-90 transition-all relative group"
-                    title={`後ノリ (Layback): ${laybackPct}%`}
-                  />
-                </div>
-
-                {/* Legend Badges */}
-                <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono pt-0.5">
-                  <span className="flex items-center gap-1 text-pink-400">
-                    <span className="w-2 h-2 rounded-full bg-pink-500" />
-                    前ノリ(Rush) {rushPct}%
-                  </span>
-                  <span className="flex items-center gap-1 text-amber-300 font-black">
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    ジャスト(Pocket) {pocketPct}%
-                  </span>
-                  <span className="flex items-center gap-1 text-cyan-400">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500" />
-                    後ノリ(Layback) {laybackPct}%
-                  </span>
-                </div>
-
-                {/* Musician Diagnostic Evaluation */}
-                <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] leading-relaxed">
-                  {dominant === 'pocket' && (
-                    <p className="text-amber-200">
-                      🎯 <strong>黄金ポケット・マスター！</strong> レコーディングスタジオ級の驚異的な安定感。楽曲の軸を一切揺らさない極上ビートです。
-                    </p>
-                  )}
-                  {dominant === 'rush' && (
-                    <p className="text-pink-200">
-                      ⏩ <strong>ドライブ感あふれる前ノリ！</strong> ロックやパンクを猛烈に前へと引っ張る、スリリングで疾走感あふれるエネルギッシュなノリです。
-                    </p>
-                  )}
-                  {dominant === 'layback' && (
-                    <p className="text-cyan-200">
-                      ⏪ <strong>深いタメのレイドバック！</strong> ネオソウルやファンク特有の心地よい後ノリ。楽曲に大人びたスウィング感と重厚さを与えています。
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
         </div>
 
-        {/* DEDICATED COACH LESSON REVIEW CARD (専属動物コーチのレッスン講評＆技術的アドバイス) */}
+        {/* DEDICATED COACH LESSON REVIEW CARD (専属動物コーチのレッスン講評＆技術的アドバイス) - 最優先で一番見やすい位置に配置！ */}
         {rpgConfig && (
-          <div className="bg-slate-900/95 border-2 border-pink-500/40 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden my-2">
+          <div className="bg-slate-900/95 border-2 border-pink-500/50 rounded-3xl p-3.5 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden my-2">
             {/* Header with Coach info */}
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-800">
               <div
-                className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${coach.avatarBg} border flex items-center justify-center text-2xl shadow-md flex-shrink-0`}
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br ${coach.avatarBg} border flex items-center justify-center text-xl sm:text-2xl shadow-md flex-shrink-0`}
               >
                 {coach.emoji}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-black text-white" style={{ color: coach.color }}>
+                  <span className="text-xs sm:text-sm font-black text-white" style={{ color: coach.color }}>
                     {coach.name} のレッスン講評
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     Lv.{rpgLevel}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">課題: {rpgConfig.title}</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">課題: {rpgConfig.title}</p>
               </div>
             </div>
 
             {/* 1. やさしいコメント (Kind praise) */}
-            <div className="mt-3 p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-              <span className="text-base flex-shrink-0">💬</span>
+            <div className="mt-2.5 p-2 sm:p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+              <span className="text-sm sm:text-base flex-shrink-0">💬</span>
               <div>
-                <div className="text-[10px] font-bold text-pink-300 mb-0.5">やさしい励ましコメント:</div>
-                <p className="text-xs text-slate-200 leading-relaxed font-medium">
+                <div className="text-[9px] sm:text-[10px] font-bold text-pink-300 mb-0.5">やさしい励ましコメント:</div>
+                <p className="text-[11px] sm:text-xs text-slate-100 leading-relaxed font-medium">
                   {rpgConfig.coachAdvice.praise}
                 </p>
               </div>
             </div>
 
             {/* 2. ドラムに関する技術的コメント（ミュージシャン視点） */}
-            <div className="mt-2.5 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
-              <span className="text-base flex-shrink-0">🎯</span>
+            <div className="mt-2 p-2 sm:p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+              <span className="text-sm sm:text-base flex-shrink-0">🎯</span>
               <div>
-                <div className="text-[10px] font-bold text-amber-300 mb-0.5">技術的なドラムアドバイス:</div>
-                <p className="text-xs text-amber-100/90 leading-relaxed">
+                <div className="text-[9px] sm:text-[10px] font-bold text-amber-300 mb-0.5">技術的なドラムアドバイス:</div>
+                <p className="text-[11px] sm:text-xs text-amber-100/90 leading-relaxed">
                   {rpgConfig.coachAdvice.technicalTip}
                 </p>
               </div>
             </div>
 
             {/* Level Clearance Status & Promotion Fanfare */}
-            <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between">
+            <div className="mt-2.5 pt-2 border-t border-slate-800 flex items-center justify-between">
               <div>
                 {isRPGCleared ? (
                   <div className="flex items-center gap-1.5 text-emerald-400 font-black text-xs sm:text-sm">
@@ -588,7 +523,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                     <span>レッスン課題クリア！ 昇格達成！</span>
                   </div>
                 ) : (
-                  <div className="text-xs text-amber-300 font-bold">
+                  <div className="text-[11px] sm:text-xs text-amber-300 font-bold">
                     惜しい！あと少しでクリア！再挑戦してみよう！
                   </div>
                 )}
@@ -607,6 +542,99 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             </div>
           </div>
         )}
+
+        {/* 2. GROOVE TIMING ANALYZER (プロ・ミュージシャン視点のノリ診断: 前ノリ・ジャスト・後ノリ) */}
+        {(() => {
+          const hitNotes = notes.filter((n) => n.hit && n.hitTimeDiff !== undefined);
+          const totalHits = Math.max(1, hitNotes.length);
+          const rush = hitNotes.filter((n) => n.hitTimeDiff! < -14).length;
+          const pocket = hitNotes.filter((n) => Math.abs(n.hitTimeDiff!) <= 14).length;
+          const layback = hitNotes.filter((n) => n.hitTimeDiff! > 14).length;
+
+          const rushPct = Math.round((rush / totalHits) * 100);
+          const pocketPct = Math.round((pocket / totalHits) * 100);
+          const laybackPct = Math.round((layback / totalHits) * 100);
+
+          const sumOffset = hitNotes.reduce((acc, n) => acc + n.hitTimeDiff!, 0);
+          const avgOffset = hitNotes.length > 0 ? Math.round(sumOffset / hitNotes.length) : 0;
+
+          const dominant =
+            pocketPct >= rushPct && pocketPct >= laybackPct
+              ? 'pocket'
+              : rushPct > laybackPct
+              ? 'rush'
+              : 'layback';
+
+          return (
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-950/80 via-slate-900/90 to-slate-950/80 border border-amber-500/30 shadow-inner space-y-2 my-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs">🎯</span>
+                  <span className="text-xs font-black text-amber-300">グルーヴ・アナライザー (Timing Feel)</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  平均ズレ: <strong className={avgOffset > 0 ? 'text-cyan-400' : avgOffset < 0 ? 'text-pink-400' : 'text-amber-400'}>
+                    {avgOffset > 0 ? `+${avgOffset}` : avgOffset}ms
+                  </strong>
+                </span>
+              </div>
+
+              {/* Timing Distribution Bar */}
+              <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                <div
+                  style={{ width: `${rushPct}%` }}
+                  className="bg-pink-500 hover:opacity-90 transition-all relative group"
+                  title={`前ノリ (Rush): ${rushPct}%`}
+                />
+                <div
+                  style={{ width: `${pocketPct}%` }}
+                  className="bg-amber-400 hover:opacity-90 transition-all relative group"
+                  title={`ジャスト (Pocket): ${pocketPct}%`}
+                />
+                <div
+                  style={{ width: `${laybackPct}%` }}
+                  className="bg-cyan-500 hover:opacity-90 transition-all relative group"
+                  title={`後ノリ (Layback): ${laybackPct}%`}
+                />
+              </div>
+
+              {/* Legend Badges */}
+              <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono pt-0.5">
+                <span className="flex items-center gap-1 text-pink-400">
+                  <span className="w-2 h-2 rounded-full bg-pink-500" />
+                  前ノリ(Rush) {rushPct}%
+                </span>
+                <span className="flex items-center gap-1 text-amber-300 font-black">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  ジャスト(Pocket) {pocketPct}%
+                </span>
+                <span className="flex items-center gap-1 text-cyan-400">
+                  <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                  後ノリ(Layback) {laybackPct}%
+                </span>
+              </div>
+
+              {/* Musician Diagnostic Evaluation */}
+              <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] leading-relaxed">
+                {dominant === 'pocket' && (
+                  <p className="text-amber-200">
+                    🎯 <strong>黄金ポケット・マスター！</strong> レコーディングスタジオ級の驚異的な安定感。楽曲の軸を一切揺らさない極上ビートです。
+                  </p>
+                )}
+                {dominant === 'rush' && (
+                  <p className="text-pink-200">
+                    ⏩ <strong>ドライブ感あふれる前ノリ！</strong> ロックやパンクを猛烈に前へと引っ張る、スリリングで疾走感あふれるエネルギッシュなノリです。
+                  </p>
+                )}
+                {dominant === 'layback' && (
+                  <p className="text-cyan-200">
+                    ⏪ <strong>深いタメのレイドバック！</strong> ネオソウルやファンク特有の心地よい後ノリ。楽曲に大人びたスウィング感と重厚さを与えています。
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* COURSE MODE PROGRESS OR FINISHED BANNER */}
         {isCourseMode && courseState && (

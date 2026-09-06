@@ -788,7 +788,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         )}
 
         {/* MAIN 3D ANGLED REAL DRUM SET (プレイヤー用ドラムセット) */}
-        <div className={`relative flex-1 w-full flex items-center justify-center ${isAIBattleActive ? 'max-w-4xl' : 'max-w-5xl'}`}>
+        <div className={`relative flex-1 w-full flex items-center justify-center ${isAIBattleActive ? 'max-w-4xl' : 'max-w-5xl'} ${deviceMode === 'smartphone' ? 'pb-8 sm:pb-0' : ''}`}>
           <DrumSet
             onDrumHit={handleDrumHit}
             activeGlowingParts={activeGlows}
@@ -895,8 +895,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         )}
       </div>
 
-      {/* BOTTOM FOOTER INFO */}
-      <div className="w-full max-w-lg mx-auto flex items-center justify-between text-xs text-slate-500 px-2 py-1">
+      {/* BOTTOM FOOTER INFO (スマホでは画面下部のSafariバーとの干渉を避けるため非表示、タブレット・PCで表示) */}
+      <div className="hidden sm:flex w-full max-w-lg mx-auto items-center justify-between text-xs text-slate-500 px-2 py-1">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           <span>光ったタイミングでタップ！</span>
