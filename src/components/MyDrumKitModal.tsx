@@ -214,190 +214,195 @@ export const MyDrumKitModal: React.FC<MyDrumKitModalProps> = ({
           </div>
         </div>
 
-        {/* MODAL MAIN CONTENT: PREVIEW ON TOP/LEFT, CONTROLS ON BOTTOM/RIGHT */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 touch-pan-y">
-          {/* LEFT: 3D REAL-TIME KIT VISUAL PREVIEW & TEST HIT */}
-          <div className="lg:col-span-5 bg-gradient-to-b from-slate-950 to-slate-900 rounded-3xl p-3 sm:p-4 border border-slate-800 flex flex-col justify-between relative overflow-hidden shadow-inner shrink-0">
-            {/* Nickname Editor */}
-            <div className="flex items-center gap-2 mb-2 bg-slate-900/90 p-2 rounded-2xl border border-slate-800">
-              <Edit3 className="w-4 h-4 text-indigo-400 shrink-0" />
-              <input
-                type="text"
-                value={editingName}
-                maxLength={20}
-                onChange={(e) => {
-                  setEditingName(e.target.value);
-                  handleUpdateCurrentKit({ name: e.target.value });
-                }}
-                className="w-full bg-transparent text-xs sm:text-sm font-black text-white outline-none"
-                placeholder="マイドラムセットの愛称"
-              />
-            </div>
+        {/* MODAL MAIN CONTENT: SCROLL CONTAINER WITH TOUCH SUPPORT */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 touch-pan-y"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+            {/* LEFT: 3D REAL-TIME KIT VISUAL PREVIEW & TEST HIT */}
+            <div className="lg:col-span-5 bg-gradient-to-b from-slate-950 to-slate-900 rounded-3xl p-3 sm:p-4 border border-slate-800 flex flex-col justify-between relative shadow-inner">
+              {/* Nickname Editor */}
+              <div className="flex items-center gap-2 mb-2 bg-slate-900/90 p-2 rounded-2xl border border-slate-800">
+                <Edit3 className="w-4 h-4 text-indigo-400 shrink-0" />
+                <input
+                  type="text"
+                  value={editingName}
+                  maxLength={20}
+                  onChange={(e) => {
+                    setEditingName(e.target.value);
+                    handleUpdateCurrentKit({ name: e.target.value });
+                  }}
+                  className="w-full bg-transparent text-xs sm:text-sm font-black text-white outline-none"
+                  placeholder="マイドラムセットの愛称"
+                />
+              </div>
 
-            {/* Visual Drum Riser / Mat Platform in Preview (FULLY VISIBLE ON MOBILE) */}
-            <div className="relative my-auto flex flex-col items-center justify-center py-2 px-1">
-              {/* Drum Stage Rug Base */}
-              <div
-                className="absolute inset-x-1 inset-y-0 rounded-3xl sm:rounded-[36px] border border-amber-500/20 shadow-2xl"
-                style={{
-                  background:
-                    'radial-gradient(ellipse at 50% 60%, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 75%, rgba(2, 6, 23, 1) 100%)',
-                }}
-              />
+              {/* Visual Drum Riser / Mat Platform in Preview (GUARANTEED NO CUTOFF ON MOBILE) */}
+              <div className="relative my-auto flex flex-col items-center justify-center py-2 px-1">
+                {/* Drum Stage Rug Base */}
+                <div
+                  className="absolute inset-0 rounded-2xl sm:rounded-[36px] border border-amber-500/20 shadow-2xl"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at 50% 60%, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 75%, rgba(2, 6, 23, 1) 100%)',
+                  }}
+                />
 
-              {/* Hardware stand legs subtle shadows */}
-              <div className="absolute bottom-2 inset-x-6 h-5 bg-black/40 rounded-full blur-md" />
+                {/* Hardware stand legs subtle shadows */}
+                <div className="absolute bottom-1 inset-x-6 h-4 bg-black/50 rounded-full blur-md" />
 
-              {/* Mini 3D Drum Model Representation - Scaled so NO drums are cut off */}
-              <div className="relative z-10 w-full max-w-[280px] sm:max-w-[320px] flex flex-col items-center gap-1.5 sm:gap-2.5 p-1.5">
-                {/* Cymbal row */}
-                <div className="w-full flex items-center justify-between px-1 sm:px-2">
-                  <div
-                    className="w-12 h-12 sm:w-15 sm:h-15 rounded-full shadow-lg border-2 flex items-center justify-center text-[9px] sm:text-[10px] font-black shrink-0 transition-transform"
-                    style={{
-                      background: selectedCymbal.gradient,
-                      borderColor: selectedCymbal.borderColor,
-                      color: selectedHardware.color,
-                      transform: 'rotateX(28deg)',
-                    }}
-                  >
-                    CRASH
-                  </div>
-                  <div
-                    className="w-12 h-12 sm:w-15 sm:h-15 rounded-full shadow-lg border-2 flex items-center justify-center text-[9px] sm:text-[10px] font-black shrink-0 transition-transform"
-                    style={{
-                      background: selectedCymbal.gradient,
-                      borderColor: selectedCymbal.borderColor,
-                      color: selectedHardware.color,
-                      transform: 'rotateX(28deg)',
-                    }}
-                  >
-                    RIDE
-                  </div>
-                </div>
-
-                {/* Toms row */}
-                <div className="flex items-center gap-2 sm:gap-3 -mt-1 sm:-mt-2">
-                  <div
-                    className="w-11 h-11 sm:w-13 sm:h-13 rounded-full border-3 sm:border-4 shadow-xl flex items-center justify-center text-[8px] sm:text-[9px] font-black shrink-0 transition-transform"
-                    style={{
-                      backgroundColor: selectedHead.color,
-                      borderColor: selectedHardware.color,
-                      boxShadow: `0 0 10px ${currentKit.shellColor}66, inset 0 0 6px ${currentKit.shellColor}`,
-                      color: currentKit.shellColor,
-                      transform: 'rotateX(18deg)',
-                    }}
-                  >
-                    TOM 1
-                  </div>
-                  <div
-                    className="w-11 h-11 sm:w-13 sm:h-13 rounded-full border-3 sm:border-4 shadow-xl flex items-center justify-center text-[8px] sm:text-[9px] font-black shrink-0 transition-transform"
-                    style={{
-                      backgroundColor: selectedHead.color,
-                      borderColor: selectedHardware.color,
-                      boxShadow: `0 0 10px ${currentKit.shellColor}66, inset 0 0 6px ${currentKit.shellColor}`,
-                      color: currentKit.shellColor,
-                      transform: 'rotateX(18deg)',
-                    }}
-                  >
-                    TOM 2
-                  </div>
-                </div>
-
-                {/* Snare & Kick bottom row (GUARANTEED VISIBLE!) */}
-                <div className="w-full flex items-center justify-around gap-2 -mt-0.5 sm:-mt-1">
-                  <div
-                    className="w-15 h-15 sm:w-18 sm:h-18 rounded-full border-3 sm:border-4 shadow-2xl flex items-center justify-center text-[10px] sm:text-xs font-black relative shrink-0 transition-transform"
-                    style={{
-                      backgroundColor: selectedHead.color,
-                      borderColor: selectedHardware.color,
-                      boxShadow: `0 0 14px ${currentKit.shellColor}, inset 0 0 10px ${currentKit.shellColor}`,
-                      color: selectedHead.id === 'clearEbony' ? '#fff' : '#0f172a',
-                      transform: 'rotateX(20deg)',
-                    }}
-                  >
-                    SNARE
+                {/* Mini 3D Drum Model Representation - Exact proportions for mobile & tablet */}
+                <div className="relative z-10 w-full max-w-[270px] sm:max-w-[320px] flex flex-col items-center gap-1 sm:gap-2 p-1">
+                  {/* Cymbal row (CRASH & RIDE) */}
+                  <div className="w-full flex items-center justify-between px-1 sm:px-3">
                     <div
-                      className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full border"
-                      style={{ backgroundColor: selectedHardware.color, borderColor: '#fff' }}
-                      title="フープ＆テンションボルト"
-                    />
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg border-2 flex items-center justify-center text-[8px] sm:text-[10px] font-black shrink-0 transition-all"
+                      style={{
+                        background: selectedCymbal.gradient,
+                        borderColor: selectedCymbal.borderColor,
+                        color: selectedHardware.color,
+                        transform: 'rotateX(28deg)',
+                      }}
+                    >
+                      CRASH
+                    </div>
+                    <div
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg border-2 flex items-center justify-center text-[8px] sm:text-[10px] font-black shrink-0 transition-all"
+                      style={{
+                        background: selectedCymbal.gradient,
+                        borderColor: selectedCymbal.borderColor,
+                        color: selectedHardware.color,
+                        transform: 'rotateX(28deg)',
+                      }}
+                    >
+                      RIDE
+                    </div>
                   </div>
 
-                  <div
-                    className="w-17 h-17 sm:w-22 sm:h-22 rounded-full border-3 sm:border-4 shadow-2xl flex flex-col items-center justify-center text-[10px] sm:text-xs font-black shrink-0 transition-transform"
-                    style={{
-                      backgroundColor: currentKit.shellColor,
-                      borderColor: selectedHardware.color,
-                      boxShadow: `0 0 18px ${currentKit.shellColor}aa`,
-                      color: '#fff',
-                      backgroundImage: selectedMaterial.texturePattern,
-                    }}
-                  >
-                    <span className="text-[8px] sm:text-[9px] opacity-80 font-mono">22" BASS</span>
-                    <span>KICK</span>
+                  {/* Toms row (TOM 1 & TOM 2) */}
+                  <div className="flex items-center gap-2 sm:gap-3 -mt-1 sm:-mt-2">
+                    <div
+                      className="w-10 h-10 sm:w-13 sm:h-13 rounded-full border-3 sm:border-4 shadow-xl flex items-center justify-center text-[8px] sm:text-[9px] font-black shrink-0 transition-all"
+                      style={{
+                        backgroundColor: selectedHead.color,
+                        borderColor: selectedHardware.color,
+                        boxShadow: `0 0 10px ${currentKit.shellColor}66, inset 0 0 6px ${currentKit.shellColor}`,
+                        color: currentKit.shellColor,
+                        transform: 'rotateX(18deg)',
+                      }}
+                    >
+                      TOM 1
+                    </div>
+                    <div
+                      className="w-10 h-10 sm:w-13 sm:h-13 rounded-full border-3 sm:border-4 shadow-xl flex items-center justify-center text-[8px] sm:text-[9px] font-black shrink-0 transition-all"
+                      style={{
+                        backgroundColor: selectedHead.color,
+                        borderColor: selectedHardware.color,
+                        boxShadow: `0 0 10px ${currentKit.shellColor}66, inset 0 0 6px ${currentKit.shellColor}`,
+                        color: currentKit.shellColor,
+                        transform: 'rotateX(18deg)',
+                      }}
+                    >
+                      TOM 2
+                    </div>
+                  </div>
+
+                  {/* Snare & Kick bottom row (NEVER CUT OFF) */}
+                  <div className="w-full flex items-center justify-around gap-2 -mt-0.5 sm:-mt-1">
+                    <div
+                      className="w-14 h-14 sm:w-18 sm:h-18 rounded-full border-3 sm:border-4 shadow-2xl flex items-center justify-center text-[9px] sm:text-xs font-black relative shrink-0 transition-all"
+                      style={{
+                        backgroundColor: selectedHead.color,
+                        borderColor: selectedHardware.color,
+                        boxShadow: `0 0 14px ${currentKit.shellColor}, inset 0 0 10px ${currentKit.shellColor}`,
+                        color: selectedHead.id === 'clearEbony' ? '#fff' : '#0f172a',
+                        transform: 'rotateX(20deg)',
+                      }}
+                    >
+                      SNARE
+                      <div
+                        className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full border"
+                        style={{ backgroundColor: selectedHardware.color, borderColor: '#fff' }}
+                        title="フープ＆テンションボルト"
+                      />
+                    </div>
+
+                    <div
+                      className="w-16 h-16 sm:w-22 sm:h-22 rounded-full border-3 sm:border-4 shadow-2xl flex flex-col items-center justify-center text-[9px] sm:text-xs font-black shrink-0 transition-all"
+                      style={{
+                        backgroundColor: currentKit.shellColor,
+                        borderColor: selectedHardware.color,
+                        boxShadow: `0 0 18px ${currentKit.shellColor}aa`,
+                        color: '#fff',
+                        backgroundImage: selectedMaterial.texturePattern,
+                      }}
+                    >
+                      <span className="text-[7px] sm:text-[9px] opacity-80 font-mono">22" BASS</span>
+                      <span>KICK</span>
+                    </div>
+                  </div>
+
+                  {/* Hardware stand feet visual */}
+                  <div className="w-full flex items-center justify-center gap-5 sm:gap-6 mt-0.5 opacity-70">
+                    <div className="flex flex-col items-center">
+                      <div className="w-1 h-2.5 sm:h-3.5" style={{ backgroundColor: selectedHardware.color }} />
+                      <div className="w-5 sm:w-6 h-1 rounded-full bg-slate-900 border border-slate-700" />
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="w-1 h-3 sm:h-4.5" style={{ backgroundColor: selectedHardware.color }} />
+                      <div className="w-7 sm:w-8 h-1 rounded-full bg-slate-900 border border-slate-700" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Hardware stand feet visual */}
-              <div className="w-full flex items-center justify-center gap-5 sm:gap-6 mt-1 opacity-70">
-                <div className="flex flex-col items-center">
-                  <div className="w-1 h-3 sm:h-4" style={{ backgroundColor: selectedHardware.color }} />
-                  <div className="w-5 sm:w-6 h-1 rounded-full bg-slate-900 border border-slate-700" />
+              {/* Test Sound Button */}
+              <div className="mt-2 sm:mt-3 flex items-center justify-between pt-2 border-t border-slate-800">
+                <div className="text-[10px] sm:text-[11px] text-slate-300">
+                  {selectedMaterial.name} / {selectedHardware.name}
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-1 h-3.5 sm:h-5" style={{ backgroundColor: selectedHardware.color }} />
-                  <div className="w-7 sm:w-8 h-1 rounded-full bg-slate-900 border border-slate-700" />
-                </div>
+                <button
+                  type="button"
+                  onClick={handleTestHit}
+                  className="px-2.5 py-1.5 sm:px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow transition"
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>サウンド試聴</span>
+                </button>
               </div>
             </div>
 
-            {/* Test Sound Button */}
-            <div className="mt-2 sm:mt-3 flex items-center justify-between pt-2 border-t border-slate-800">
-              <div className="text-[10px] sm:text-[11px] text-slate-300">
-                {selectedMaterial.name} / {selectedHardware.name}
-              </div>
-              <button
-                type="button"
-                onClick={handleTestHit}
-                className="px-2.5 py-1.5 sm:px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow transition"
-              >
-                <Volume2 className="w-3.5 h-3.5" />
-                <span>サウンド試聴</span>
-              </button>
-            </div>
-          </div>
-
-          {/* RIGHT: CUSTOMIZATION CONTROLS */}
-          <div className="lg:col-span-7 flex flex-col gap-3">
-            {/* Category Navigation Tabs (HORIZONTALLY SLIDABLE / SCROLLABLE ON MOBILE) */}
-            <div className="relative group">
-              <div className="flex items-center gap-1.5 p-1.5 bg-slate-950/90 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar touch-pan-x scroll-smooth">
-                {[
-                  { id: 'shell', label: '1. シェル素材' },
-                  { id: 'color', label: '2. カラー' },
-                  { id: 'head', label: '3. ドラムヘッド' },
-                  { id: 'hardware', label: '4. ハードウェア' },
-                  { id: 'cymbal', label: '5. シンバル' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
-                      activeTab === tab.id
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-              {/* Subtle mobile scroll indicator gradient on the right */}
-              <div className="pointer-events-none absolute right-1 top-1 bottom-1 w-6 bg-gradient-to-l from-slate-950/90 to-transparent rounded-r-2xl sm:hidden flex items-center justify-end pr-1 text-[10px] text-slate-400">
-                ›
+            {/* RIGHT: CUSTOMIZATION CONTROLS */}
+            <div className="lg:col-span-7 flex flex-col gap-3 min-w-0">
+              {/* Category Navigation Tabs (HORIZONTALLY SLIDABLE / SCROLLABLE ON MOBILE) */}
+              <div className="relative group">
+                <div className="flex items-center gap-1.5 p-1.5 bg-slate-950/90 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar touch-pan-x scroll-smooth">
+                  {[
+                    { id: 'shell', label: '1. シェル素材' },
+                    { id: 'color', label: '2. カラー' },
+                    { id: 'head', label: '3. ドラムヘッド' },
+                    { id: 'hardware', label: '4. ハードウェア' },
+                    { id: 'cymbal', label: '5. シンバル' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`py-1.5 px-3 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
+                        activeTab === tab.id
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Subtle mobile scroll indicator gradient on the right */}
+                <div className="pointer-events-none absolute right-1 top-1 bottom-1 w-6 bg-gradient-to-l from-slate-950/90 to-transparent rounded-r-2xl sm:hidden flex items-center justify-end pr-1 text-[10px] text-slate-400">
+                  ›
+                </div>
               </div>
             </div>
 
