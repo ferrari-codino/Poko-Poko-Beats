@@ -79,6 +79,10 @@ class DrumSynthEngine {
     return this.ctx;
   }
 
+  public getMasterGain(): GainNode | null {
+    return this.masterGain;
+  }
+
   public setVolumes(master: number, drum: number) {
     if (this.masterGain) this.masterGain.gain.value = Math.max(0, Math.min(1, master));
     if (this.drumGain) this.drumGain.gain.value = Math.max(0, Math.min(1, drum));

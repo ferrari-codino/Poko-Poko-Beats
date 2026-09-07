@@ -31,8 +31,13 @@ class MusicEngine {
     const ctx = drumSynth.getContext();
     if (ctx && !this.bgmGain) {
       this.bgmGain = ctx.createGain();
-      this.bgmGain.gain.value = 0.8;
-      this.bgmGain.connect(ctx.destination);
+      this.bgmGain.gain.value = 0.85;
+      const master = drumSynth.getMasterGain();
+      if (master) {
+        this.bgmGain.connect(master);
+      } else {
+        this.bgmGain.connect(ctx.destination);
+      }
     }
   }
 
@@ -500,7 +505,9 @@ class MusicEngine {
         const targetCtxTime = this.startTime + noteSongTime;
 
         const melodyFreq = theme.melody[(m * melodySubdivisions + s) % theme.melody.length];
-        this.synthesizeLeadNote(targetCtxTime, melodyFreq, subDuration * 0.6);
+        if (melodyFreq > 0) {
+          this.synthesizeLeadNote(targetCtxTime, melodyFreq, subDuration * 0.88);
+        }
       }
 
       this.lastScheduledMeasure++;
@@ -519,10 +526,10 @@ class MusicEngine {
     osc.frequency.setValueAtTime(freq, targetTime);
 
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(450, targetTime);
-    filter.frequency.exponentialRampToValueAtTime(120, targetTime + duration);
+    filter.frequency.setValueAtTime(320, targetTime);
+    filter.frequency.exponentialRampToValueAtTime(90, targetTime + duration);
 
-    gain.gain.setValueAtTime(0.35, targetTime);
+    gain.gain.setValueAtTime(0.24, targetTime);
     gain.gain.exponentialRampToValueAtTime(0.001, targetTime + duration);
 
     osc.connect(filter);
@@ -555,9 +562,9 @@ class MusicEngine {
     osc.frequency.setValueAtTime(freq, targetTime);
 
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1400, targetTime);
+    filter.frequency.setValueAtTime(1100, targetTime);
 
-    gain.gain.setValueAtTime(0.18, targetTime);
+    gain.gain.setValueAtTime(0.12, targetTime);
     gain.gain.exponentialRampToValueAtTime(0.001, targetTime + duration);
 
     osc.connect(filter);
@@ -582,33 +589,51 @@ class MusicEngine {
     const ctx = drumSynth.getContext();
     if (!ctx || !this.bgmGain) return;
 
-    const osc = ctx.createOscillator();
+    // Dual-oscillator lead synthesizer (warm pulse/saw + detuned sine) for clearly audible, vibrant melody
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
     const filter = ctx.createBiquadFilter();
     const gain = ctx.createGain();
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, targetTime);
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(freq, targetTime);
 
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(freq * 1.5, targetTime);
-    filter.Q.value = 1.2;
+    // Warm sub/fundamental layer with subtle chorusing detune (+3 cents)
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(freq, targetTime);
+    osc2.detune.setValueAtTime(4, targetTime);
 
-    gain.gain.setValueAtTime(0.12, targetTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, targetTime + duration);
+    // Dynamic lowpass filter to let the melody cut through cleanly without harshness
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(Math.min(freq * 3.5, 4800), targetTime);
+    filter.Q.value = 2.0;
 
-    osc.connect(filter);
+    // Musical ADSR envelope for clear lead presence
+    const attackTime = 0.015;
+    const peakVolume = 0.38;
+    gain.gain.setValueAtTime(0.0001, targetTime);
+    gain.gain.linearRampToValueAtTime(peakVolume, targetTime + attackTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, targetTime + duration);
+
+    osc1.connect(filter);
+    osc2.connect(filter);
     filter.connect(gain);
     gain.connect(this.bgmGain);
 
-    osc.start(targetTime);
-    osc.stop(targetTime + duration + 0.05);
+    osc1.start(targetTime);
+    osc2.start(targetTime);
+    const stopTime = targetTime + duration + 0.06;
+    osc1.stop(stopTime);
+    osc2.stop(stopTime);
 
     this.synthNodes.push({
-      stopTime: targetTime + duration + 0.05,
+      stopTime,
       stop: () => {
         try {
-          osc.stop();
-          osc.disconnect();
+          osc1.stop();
+          osc2.stop();
+          osc1.disconnect();
+          osc2.disconnect();
         } catch {}
       },
     });
