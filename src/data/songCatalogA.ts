@@ -2,7 +2,7 @@ import { SongData } from '../types';
 import { createSong } from './chartGenerator';
 
 export const CATALOG_A: SongData[] = [
-  // 1. マリーゴールド (あいみょん) - レベル1 課題曲
+  // 1. マリーゴールド (あいみょん)
   createSong({
     id: 'marigold',
     title: 'マリーゴールド',
@@ -19,7 +19,7 @@ export const CATALOG_A: SongData[] = [
     ratings: { easy: 1, normal: 3, hard: 5, master: 7 },
   }),
 
-  // 2. 炎 (LiSA) - 劇場版「鬼滅の刃」無限列車編 主題歌 - レベル2 課題曲
+  // 2. 炎 (LiSA) - 劇場版「鬼滅の刃」無限列車編 主題歌
   createSong({
     id: 'homura',
     title: '炎',

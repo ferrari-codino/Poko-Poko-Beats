@@ -60,6 +60,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [notes, setNotes] = useState<RhythmNote[]>([]);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [songProgress, setSongProgress] = useState<number>(0);
+  const [totalDuration, setTotalDuration] = useState<number>(song.duration);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [feedbacks, setFeedbacks] = useState<JudgmentFeedback[]>([]);
   const [lastJudgment, setLastJudgment] = useState<JudgmentType | null>(null);
@@ -176,10 +177,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     musicEngine.setBgmVolume(settings.musicVolume);
 
     // Prepare effective song with custom BPM and duration for RPG curriculum
+    const effectiveDuration =
+      rpgLevel && rawNotes.length > 0
+        ? Math.ceil(Math.max(...rawNotes.map((n) => n.time)) + 2.5)
+        : song.duration;
+    setTotalDuration(effectiveDuration);
+
     const effectiveSong: SongData = {
       ...song,
       bpm: activeBpm,
-      duration: rpgLevel === 1 ? 32 : rpgLevel === 2 ? 35 : song.duration,
+      duration: effectiveDuration,
     };
 
     // Start playback
@@ -705,7 +712,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             <div className="flex justify-between text-[10px] text-slate-400 font-mono mb-1">
               <span>TIME</span>
               <span>
-                {Math.floor(currentTime)}s / {rpgLevel === 1 ? 26 : song.duration}s
+                {Math.floor(currentTime)}s / {totalDuration}s
               </span>
             </div>
             <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">

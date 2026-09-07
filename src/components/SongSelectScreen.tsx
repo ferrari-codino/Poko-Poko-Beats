@@ -353,11 +353,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
                   {currentLevelConfig?.title || `Level ${rpgLevel}: はじめのドン！`}
                 </h2>
                 <p className="text-xs text-amber-200/90 font-medium mt-1 leading-relaxed">
-                  {rpgLevel === 1
-                    ? '🎵 課題曲: マリーゴールド / あいみょん (BPM 106・足のキックだけで安心クリア！)'
-                    : rpgLevel === 2
-                    ? '🎵 課題曲: 炎 / LiSA (劇場版「鬼滅の刃」主題歌・BPM 76・壮大なバラードビート！)'
-                    : currentLevelConfig?.focusLesson}
+                  {currentLevelConfig?.focusLesson}
                 </p>
               </div>
             </div>
@@ -649,10 +645,10 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
                             <span className="font-black text-xs sm:text-sm text-white truncate">
                               {song.title}
                             </span>
-                            {song.id === 'baby-march' && (
-                              <span className="text-[8px] px-1.5 py-0.2 rounded bg-pink-500/30 text-pink-300 border border-pink-400/50 font-black shrink-0 animate-pulse flex items-center gap-0.5">
-                                <span>🔰</span>
-                                <span>レッスンLv.1 対象曲</span>
+                            {song.id === currentLevelConfig?.targetSongId && (
+                              <span className="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 border border-amber-400/50 font-black shrink-0 animate-pulse flex items-center gap-0.5">
+                                <span>🎯</span>
+                                <span>Lv.{rpgLevel || 1} 課題曲</span>
                               </span>
                             )}
                             {song.category && (

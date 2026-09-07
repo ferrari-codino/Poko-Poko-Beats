@@ -257,48 +257,48 @@ class DrumSynthEngine {
     const shell = this.activeCustomKit?.shellMaterial || 'maple';
     const head = this.activeCustomKit?.headStyle || 'coatedWhite';
 
-    // Shell acoustics parameters
+    // Shell acoustics parameters - Bass Drum punch & loudness boosted
     let baseStartFreq = 160;
-    let baseEndFreq = 42;
-    let kickDecay = 0.38;
+    let baseEndFreq = 45;
+    let kickDecay = 0.42;
     let beaterNoiseFreq = 2800;
     let beaterNoiseQ = 2.5;
-    let beaterAmp = 0.85;
-    let punchGain = 1.15;
+    let beaterAmp = 1.35;
+    let punchGain = 2.15;
 
     if (shell === 'birch') {
       baseStartFreq = 170;
-      baseEndFreq = 38; // Deep sub punch
-      kickDecay = 0.32; // Tight studio recording decay
+      baseEndFreq = 40; // Deep sub punch
+      kickDecay = 0.36; // Tight studio recording decay
       beaterNoiseFreq = 3200; // Crisp cutting beater transient
-      beaterAmp = 0.95;
-      punchGain = 1.2;
+      beaterAmp = 1.45;
+      punchGain = 2.25;
     } else if (shell === 'acrylic') {
       baseStartFreq = 180;
-      baseEndFreq = 34; // Massive modern sub drop
-      kickDecay = 0.28; // Dry, powerful
+      baseEndFreq = 36; // Massive modern sub drop
+      kickDecay = 0.32; // Dry, powerful
       beaterNoiseFreq = 3600;
-      beaterAmp = 1.05;
-      punchGain = 1.35;
+      beaterAmp = 1.55;
+      punchGain = 2.45;
     } else if (shell === 'brass') {
       baseStartFreq = 150;
-      baseEndFreq = 44;
-      kickDecay = 0.44; // Resonant deep metal boom
+      baseEndFreq = 46;
+      kickDecay = 0.48; // Resonant deep metal boom
       beaterNoiseFreq = 2600;
-      beaterAmp = 0.8;
-      punchGain = 1.1;
+      beaterAmp = 1.25;
+      punchGain = 2.05;
     } else if (shell === 'carbon') {
       baseStartFreq = 175;
-      baseEndFreq = 32; // Ultra low-end sub
-      kickDecay = 0.33;
+      baseEndFreq = 34; // Ultra low-end sub
+      kickDecay = 0.36;
       beaterNoiseFreq = 4000;
-      beaterAmp = 1.1;
-      punchGain = 1.3;
+      beaterAmp = 1.6;
+      punchGain = 2.35;
     }
 
     // Head damping modifier
     if (head === 'hydraulicBlue') {
-      kickDecay *= 0.7; // Fat 70s thump with pillow dampening
+      kickDecay *= 0.75; // Fat 70s thump with pillow dampening
       punchGain *= 1.15;
     } else if (head === 'clearEbony') {
       beaterAmp *= 1.3; // High-attack plastic click
@@ -330,13 +330,13 @@ class DrumSynthEngine {
     bodyOsc.frequency.setValueAtTime(baseStartFreq * 0.65, t);
     bodyOsc.frequency.exponentialRampToValueAtTime(baseEndFreq * 1.8, t + 0.045);
 
-    bodyGain.gain.setValueAtTime(punchGain * 0.45, t);
-    bodyGain.gain.exponentialRampToValueAtTime(0.001, t + kickDecay * 0.6);
+    bodyGain.gain.setValueAtTime(punchGain * 0.75, t);
+    bodyGain.gain.exponentialRampToValueAtTime(0.001, t + kickDecay * 0.65);
 
     bodyOsc.connect(bodyGain);
     bodyGain.connect(this.drumGain);
     bodyOsc.start(t);
-    bodyOsc.stop(t + kickDecay * 0.62);
+    bodyOsc.stop(t + kickDecay * 0.67);
 
     // 3. Realistic Beater Impact Transient Click (本物のフェルト／木製ビーター打面アタック)
     if (this.noiseBuffer) {

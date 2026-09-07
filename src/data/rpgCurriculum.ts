@@ -94,16 +94,16 @@ interface LessonTemplate {
 
 const BEGINNER_LESSONS: LessonTemplate[] = [
   {
-    title: 'マリーゴールドの鼓動！初歩のバスドラム',
-    focus: 'あいみょん「マリーゴールド」の温かいメロディに合わせ、足のキックを踏む練習',
-    praise: '素晴らしい！マリーゴールドの爽快なメロディに合わせて、ドラムの第一歩を踏み出したね🐰',
+    title: 'はじめの第一歩！初歩のバスドラム',
+    focus: '心地よいメロディとテンポに合わせ、足のキックを踏み込む練習',
+    praise: '素晴らしい！爽快なリズムに合わせて、ドラムの第一歩を踏み出したね🐰',
     tip: '【プロのコツ】バスドラムを踏む時は、かかとを軽く浮かせて足全体の重みでペダルを落とす（ヒールアップ奏法）と、ブレない重厚な低音が出ます！',
   },
   {
-    title: '炎の決意！魂のバラードキック',
-    focus: 'LiSA「炎」の壮大な世界観に合わせ、1拍目・3拍目を力強く踏み抜く練習',
-    praise: '炎の熱い旋律にぴったりの堂々としたキック！心に響く重低音だったよ！',
-    tip: '【プロのコツ】バラード曲では、焦らず曲のゆったりした重心を感じて踏み込むと、バンド全体を包み込むようなドラマチックなグルーヴが生まれます。',
+    title: 'ビートの重心！魂のバラードキック',
+    focus: '壮大なグルーヴの世界観に合わせ、1拍目・3拍目を力強く踏み抜く練習',
+    praise: '熱い旋律にぴったりの堂々としたキック！心に響く重低音だったよ！',
+    tip: '【プロのコツ】ゆったりしたテンポでは、焦らず曲の重心を感じて踏み込むと、バンド全体を包み込むようなドラマチックなグルーヴが生まれます。',
   },
   {
     title: '裏拍を恐れないキック',
@@ -342,18 +342,18 @@ export function generateAllRPGLevels(): RPGLevelConfig[] {
       template = ADVANCED_LESSONS[Math.min(idx, ADVANCED_LESSONS.length - 1)];
     }
 
-    // BPM scaling: Level 1 is Marigold (BPM 106), Level 2 is Homura (BPM 76)
+    // BPM scaling based on target song
     let bpm = targetSong.bpm || 106;
     if (i === 1) {
-      bpm = 106;
+      bpm = targetSong.bpm || 106;
     } else if (i === 2) {
-      bpm = 76;
+      bpm = targetSong.bpm || 110;
     } else if (i === 3) {
-      bpm = 66;
+      bpm = targetSong.bpm || 114;
     } else if (i === 4) {
-      bpm = 70;
+      bpm = targetSong.bpm || 118;
     } else if (i === 5) {
-      bpm = 74;
+      bpm = targetSong.bpm || 120;
     } else if (i <= 20) {
       // 78 to 120 at Lv.20
       bpm = 74 + Math.round(((i - 5) / 15) * 46);
@@ -448,7 +448,7 @@ export function generateRPGLevelNotes(
   const leadIn = Math.max(3.0, config.previewSeconds * 1.5);
 
   if (level === 1) {
-    // Level 1: BPM 106 (あいみょん「マリーゴールド」), 1拍目・3拍目のバスドラムで安心クリア！
+    // Level 1: 1拍目・3拍目のバスドラムで安心クリア！
     const notes: RhythmNote[] = [];
     for (let m = 0; m < 12; m++) {
       const base = leadIn + m * measureSec;
@@ -459,7 +459,7 @@ export function generateRPGLevelNotes(
   }
 
   if (level === 2) {
-    // Level 2: BPM 76 (LiSA「炎」), 壮大なバラードに合わせ1拍目・3拍目を力強く踏み抜く！
+    // Level 2: 壮大なリズムに合わせ1拍目・3拍目を力強く踏み抜く！
     const notes: RhythmNote[] = [];
     for (let m = 0; m < 10; m++) {
       const base = leadIn + m * measureSec;
