@@ -94,16 +94,16 @@ interface LessonTemplate {
 
 const BEGINNER_LESSONS: LessonTemplate[] = [
   {
-    title: '第一歩！バスドラムの鼓動',
-    focus: '足だけで小節頭の4分音符を踏む練習',
-    praise: '素晴らしい！ドラムの命であるバスドラムの第一歩を踏み出したね🐰',
+    title: 'マリーゴールドの鼓動！初歩のバスドラム',
+    focus: 'あいみょん「マリーゴールド」の温かいメロディに合わせ、足のキックを踏む練習',
+    praise: '素晴らしい！マリーゴールドの爽快なメロディに合わせて、ドラムの第一歩を踏み出したね🐰',
     tip: '【プロのコツ】バスドラムを踏む時は、かかとを軽く浮かせて足全体の重みでペダルを落とす（ヒールアップ奏法）と、ブレない重厚な低音が出ます！',
   },
   {
-    title: '一定のパルスを刻む',
-    focus: 'メトロノームと完全に同期する4分キック',
-    praise: '一定のテンポで刻めてる！すごく安定感があるよ！',
-    tip: '【プロのコツ】ペダルのビーター（打面を叩くヘッド）を叩いた後、押し付けたままにするか離すかで音の余韻が変わります。まずは押し付けずに開放するオープンブローを意識してみてね。',
+    title: '炎の決意！魂のバラードキック',
+    focus: 'LiSA「炎」の壮大な世界観に合わせ、1拍目・3拍目を力強く踏み抜く練習',
+    praise: '炎の熱い旋律にぴったりの堂々としたキック！心に響く重低音だったよ！',
+    tip: '【プロのコツ】バラード曲では、焦らず曲のゆったりした重心を感じて踏み込むと、バンド全体を包み込むようなドラマチックなグルーヴが生まれます。',
   },
   {
     title: '裏拍を恐れないキック',
@@ -342,12 +342,12 @@ export function generateAllRPGLevels(): RPGLevelConfig[] {
       template = ADVANCED_LESSONS[Math.min(idx, ADVANCED_LESSONS.length - 1)];
     }
 
-    // BPM scaling: Level 1 starts at 60 BPM, progressively increases
-    let bpm = 60;
+    // BPM scaling: Level 1 is Marigold (BPM 106), Level 2 is Homura (BPM 76)
+    let bpm = targetSong.bpm || 106;
     if (i === 1) {
-      bpm = 60;
+      bpm = 106;
     } else if (i === 2) {
-      bpm = 63;
+      bpm = 76;
     } else if (i === 3) {
       bpm = 66;
     } else if (i === 4) {
@@ -448,38 +448,20 @@ export function generateRPGLevelNotes(
   const leadIn = Math.max(3.0, config.previewSeconds * 1.5);
 
   if (level === 1) {
-    // Level 1: BPM 60, Preview 1.5s, 100% accessible first-try clear
-    // Half-notes / beats 1 and 3 in 60BPM (spaced 2.0s apart)
+    // Level 1: BPM 106 (あいみょん「マリーゴールド」), 1拍目・3拍目のバスドラムで安心クリア！
     const notes: RhythmNote[] = [];
-    const timestamps = [
-      leadIn,
-      leadIn + 2.0,
-      leadIn + 4.0,
-      leadIn + 6.0,
-      leadIn + 8.0,
-      leadIn + 10.0,
-      leadIn + 12.0,
-      leadIn + 14.0,
-      leadIn + 16.0,
-      leadIn + 18.0,
-      leadIn + 20.0,
-      leadIn + 22.0,
-    ];
-    timestamps.forEach((t, idx) => {
-      notes.push({
-        id: `rpg-1-${idx}`,
-        time: Number(t.toFixed(3)),
-        part: 'kick',
-        type: 'tap',
-      });
-    });
+    for (let m = 0; m < 12; m++) {
+      const base = leadIn + m * measureSec;
+      notes.push({ id: `rpg-1-${m}-1`, time: Number(base.toFixed(3)), part: 'kick', type: 'tap' });
+      notes.push({ id: `rpg-1-${m}-3`, time: Number((base + beatSec * 2).toFixed(3)), part: 'kick', type: 'tap' });
+    }
     return notes;
   }
 
   if (level === 2) {
-    // Level 2: BPM 63, regular pulses on beats 1 and 3
+    // Level 2: BPM 76 (LiSA「炎」), 壮大なバラードに合わせ1拍目・3拍目を力強く踏み抜く！
     const notes: RhythmNote[] = [];
-    for (let m = 0; m < 8; m++) {
+    for (let m = 0; m < 10; m++) {
       const base = leadIn + m * measureSec;
       notes.push({ id: `rpg-2-${m}-1`, time: Number(base.toFixed(3)), part: 'kick', type: 'tap' });
       notes.push({ id: `rpg-2-${m}-3`, time: Number((base + beatSec * 2).toFixed(3)), part: 'kick', type: 'tap' });

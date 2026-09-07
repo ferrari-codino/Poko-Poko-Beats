@@ -354,7 +354,9 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
                 </h2>
                 <p className="text-xs text-amber-200/90 font-medium mt-1 leading-relaxed">
                   {rpgLevel === 1
-                    ? '🎵 課題曲: はじめてのマーチ (ゆったりBPM 60・光ガイド1.5秒前・足だけで安心クリア！)'
+                    ? '🎵 課題曲: マリーゴールド / あいみょん (BPM 106・足のキックだけで安心クリア！)'
+                    : rpgLevel === 2
+                    ? '🎵 課題曲: 炎 / LiSA (劇場版「鬼滅の刃」主題歌・BPM 76・壮大なバラードビート！)'
                     : currentLevelConfig?.focusLesson}
                 </p>
               </div>

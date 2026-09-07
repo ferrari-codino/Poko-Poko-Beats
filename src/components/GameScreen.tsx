@@ -179,7 +179,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     const effectiveSong: SongData = {
       ...song,
       bpm: activeBpm,
-      duration: rpgLevel === 1 ? 26 : song.duration,
+      duration: rpgLevel === 1 ? 32 : rpgLevel === 2 ? 35 : song.duration,
     };
 
     // Start playback
