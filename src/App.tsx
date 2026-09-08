@@ -314,9 +314,9 @@ export default function App() {
     setScreen('game');
   };
 
-  const handleStartRPGLevel = (level: number) => {
+  const handleStartRPGLevel = (level: number, songOverride?: SongData) => {
     const config = getRPGLevelConfig(level);
-    const targetSong = SONGS.find((s) => s.id === config.targetSongId) || SONGS[0];
+    const targetSong = songOverride || selectedSong || SONGS.find((s) => s.id === config.targetSongId) || SONGS[0];
     setSelectedSong(targetSong);
     setSelectedDifficulty(config.difficulty);
     setActiveRPGLevel(level);
@@ -611,7 +611,7 @@ export default function App() {
             onExitCourse={handleExitCourse}
             onNextRPGLevel={(nextLvl) => {
               setRpgProgress(loadRPGProgress());
-              handleStartRPGLevel(nextLvl);
+              handleStartRPGLevel(nextLvl, selectedSong);
             }}
           />
         )}

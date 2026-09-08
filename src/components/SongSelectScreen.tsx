@@ -40,7 +40,7 @@ interface SongSelectScreenProps {
   onOpenCourseModal: () => void;
   onStartRandomGame?: () => void;
   onOpenRPGModal?: () => void;
-  onStartRPGLevel?: (level: number) => void;
+  onStartRPGLevel?: (level: number, songOverride?: SongData) => void;
   rpgLevel?: number;
   onOpenShowcase?: () => void;
   onOpenMyDrumSet?: () => void;
@@ -380,13 +380,23 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
               </div>
             </div>
 
+            {/* Selected practice song display */}
+            <div className="px-3 py-1.5 rounded-xl bg-cyan-950/40 border border-cyan-800/40 flex items-center justify-between text-[11px]">
+              <span className="text-slate-300 font-bold flex items-center gap-1">
+                <span>🎵</span>
+                <span>練習曲:</span>
+                <span className="text-cyan-200 font-black truncate max-w-[170px] sm:max-w-[220px]">{selectedSong.title}</span>
+              </span>
+              <span className="text-[10px] text-slate-400">（下の曲一覧から自由に変更可）</span>
+            </div>
+
             {/* PRIMARY UNMISSABLE LESSON START BUTTON */}
             <button
               id="start-current-rpg-level-btn"
               type="button"
               onClick={() => {
                 if (onStartRPGLevel) {
-                  onStartRPGLevel(rpgLevel || 1);
+                  onStartRPGLevel(rpgLevel || 1, selectedSong);
                 } else if (onOpenRPGModal) {
                   onOpenRPGModal();
                 }
@@ -395,7 +405,7 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
             >
               <Play className="w-5 h-5 fill-current text-slate-950" />
               <span>
-                {rpgLevel === 1 ? '🌟 今すぐ第1回レッスンを演奏スタート！' : `🌟 Lv.${rpgLevel} レッスンの演奏をスタート！`}
+                {rpgLevel === 1 ? `🌟 「${selectedSong.title}」で第1回レッスン開始！` : `🌟 「${selectedSong.title}」でLv.${rpgLevel}レッスン開始！`}
               </span>
             </button>
 
@@ -645,10 +655,10 @@ export const SongSelectScreen: React.FC<SongSelectScreenProps> = ({
                             <span className="font-black text-xs sm:text-sm text-white truncate">
                               {song.title}
                             </span>
-                            {song.id === currentLevelConfig?.targetSongId && (
-                              <span className="text-[8px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 border border-amber-400/50 font-black shrink-0 animate-pulse flex items-center gap-0.5">
-                                <span>🎯</span>
-                                <span>Lv.{rpgLevel || 1} 課題曲</span>
+                            {isSelected && (
+                              <span className="text-[8px] px-1.5 py-0.2 rounded bg-cyan-500/30 text-cyan-300 border border-cyan-400/50 font-black shrink-0 flex items-center gap-0.5">
+                                <span>🥁</span>
+                                <span>選択中</span>
                               </span>
                             )}
                             {song.category && (

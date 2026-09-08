@@ -97,7 +97,9 @@ export type SynthTheme =
   | 'traditional'
   | 'fusion'
   | 'marigold'
-  | 'homura';
+  | 'homura'
+  | 'pansy'
+  | 'fire';
 
 export type SongCategory =
   | 'J-POP'

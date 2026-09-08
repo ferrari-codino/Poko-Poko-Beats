@@ -2,41 +2,7 @@ import { SongData } from '../types';
 import { createSong } from './chartGenerator';
 
 export const CATALOG_A: SongData[] = [
-  // 1. マリーゴールド (あいみょん)
-  createSong({
-    id: 'marigold',
-    title: 'マリーゴールド',
-    subtitle: 'あいみょん / Marigold',
-    genre: 'J-POP / Acoustic Rock',
-    category: 'J-POP',
-    bpm: 106,
-    timeSignature: '4/4',
-    duration: 38,
-    colorTheme: 'from-amber-400 via-orange-500 to-yellow-400',
-    previewColor: '#f59e0b',
-    description: 'あいみょんの大ヒット名曲。麦わら帽子と夏の情景を彩る、温かく心地よい王道の8ビート！',
-    synthTheme: 'marigold',
-    ratings: { easy: 1, normal: 3, hard: 5, master: 7 },
-  }),
-
-  // 2. 炎 (LiSA) - 劇場版「鬼滅の刃」無限列車編 主題歌
-  createSong({
-    id: 'homura',
-    title: '炎',
-    subtitle: 'LiSA / 劇場版「鬼滅の刃」無限列車編 主題歌',
-    genre: 'アニメ・ゲーム / Rock Ballad',
-    category: 'アニメ・ゲーム',
-    bpm: 76,
-    timeSignature: '4/4',
-    duration: 40,
-    colorTheme: 'from-rose-600 via-red-600 to-amber-500',
-    previewColor: '#e11d48',
-    description: '劇場版「鬼滅の刃」無限列車編 主題歌。魂を揺さぶる荘厳なロックバラード！ドラマチックなスネアと重厚なキック。',
-    synthTheme: 'homura',
-    ratings: { easy: 1, normal: 3, hard: 6, master: 8 },
-  }),
-
-  // 3. Poko-Poko Pop! (Preserved original)
+  // 1. Poko-Poko Pop! (Original signature beginner-friendly track)
   createSong({
     id: 'poko_pop',
     title: 'Poko-Poko Pop!',
@@ -68,6 +34,40 @@ export const CATALOG_A: SongData[] = [
     description: '桜舞う春の日の爽やかなポップス。スネアとハイハットの軽快なリズム！',
     synthTheme: 'pop',
     ratings: { easy: 2, normal: 3, hard: 5, master: 7 },
+  }),
+
+  // 3. パンジー
+  createSong({
+    id: 'pansy',
+    title: 'パンジー',
+    subtitle: 'イエロー・パンジー・ブルーム',
+    genre: 'J-POP / Acoustic Rock',
+    category: 'J-POP',
+    bpm: 106,
+    timeSignature: '4/4',
+    duration: 38,
+    colorTheme: 'from-amber-400 via-orange-500 to-yellow-400',
+    previewColor: '#f59e0b',
+    description: '色鮮やかに咲き誇るパンジーのように、温かく爽やかな風を感じる王道8ビートポップス！',
+    synthTheme: 'pansy',
+    ratings: { easy: 1, normal: 3, hard: 5, master: 7 },
+  }),
+
+  // 4. ファイアー
+  createSong({
+    id: 'fire',
+    title: 'ファイアー',
+    subtitle: 'ブレイジング・ファイアー',
+    genre: 'ロック / Rock Ballad',
+    category: 'ロック',
+    bpm: 76,
+    timeSignature: '4/4',
+    duration: 40,
+    colorTheme: 'from-rose-600 via-red-600 to-amber-500',
+    previewColor: '#e11d48',
+    description: '燃え盛る魂の情熱を描いた、重厚でエモーショナルなロックバラード！ドラマチックなスネアと重低音キック。',
+    synthTheme: 'fire',
+    ratings: { easy: 1, normal: 3, hard: 6, master: 8 },
   }),
 
   // 3. Twilight Express
